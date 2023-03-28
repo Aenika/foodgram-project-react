@@ -130,3 +130,6 @@ dmypy.json
 
 # .idea
 .idea
+
+# служебные файлы VSCode
+.VSCode/
