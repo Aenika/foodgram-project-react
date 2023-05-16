@@ -1,0 +1,22 @@
+
+{% extends "base.html" %}
+{% block title %}Новый рецепт{% endblock %}
+{% block content %}
+<!-- bradcam_area  -->
+<div class="bradcam_area bradcam_bg_2">
+  <div class="container">
+      <div class="row">
+          <div class="col-xl-12">
+              <div class="bradcam_text text-center">
+                  <h3>Новый рецепт</h3>
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
+<!--/ bradcam_area  -->
+  <form method="post" action="{% url 'recipes:new_recipy' %}">
+    {{ form.as_p }}
+    <input type="submit" value="Отправить">
+  </form> 
+{% endblock %}

@@ -15,11 +15,11 @@ class Recipy(models.Model):
     )
     text = models.TextField(
         verbose_name='Текст рецепта',
-        help_text='Введите описание блюда и метод приготовления'
+        help_text='Введите описание блюда и методов приготовления'
     )
     cooking_time = models.DurationField(
         verbose_name='Время приготовления рецепта',
-        help_text='Введите время, которое занимает готовка по данному рецепту'
+        help_text='Введите время приготовления в минутах'
     )
     pub_date = models.DateTimeField(auto_now_add=True)
     # image = models.ImageField(
