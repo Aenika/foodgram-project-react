@@ -1,46 +1,35 @@
 {% load static %}
 <header>
-  <div class="header-area ">
-    <div id="sticky-header" class="main-header-area">
-      <div class="container-fluid p-0">
-        <div class="header_bottom_border">
-          <div class="row align-items-center no-gutters">
-            <div class="col-xl-3 col-lg-2">
-              <div class="logo">
-                <a href="index.html">
-                  <img src="{% static 'img/logo.png' %}" alt="">
-                </a>
-              </div>
-            </div>
-            <div class="col-xl-6 col-lg-7">
-              <div class="main-menu  d-none d-lg-block">
-                <nav>
-                  <ul id="navigation">
-                    <li><a class="active" href="index.html">home</a></li>
-                    <li><a href="Menu.html">Menu</a></li>
-                    <li><a href="#">pages <i class="ti-angle-down"></i></a>
-                      <ul class="submenu">
-                        <li><a href="about.html">about</a></li>
-                        <li><a href="elements.html">elements</a></li>
-                      </ul>
-                    </li>
-                    <li><a href="#">blog <i class="ti-angle-down"></i></a>
-                      <ul class="submenu">
-                        <li><a href="blog.html">blog</a></li>
-                        <li><a href="single-blog.html">single-blog</a></li>
-                      </ul>
-                    </li>
-                    <li><a href="contact.html">Contact</a></li>
-                  </ul>
-                </nav>
-              </div>
-            </div>
-            <div class="col-12">
-              <div class="mobile_menu d-block d-lg-none"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+  <nav class="navbar navbar-light" style="background-color: lightskyblue">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'recipes:index' %}">
+        Foodgram
+      </a>
+      {% with request.resolver_match.view_name as view_name %}
+        <ul class="nav nav-pills">
+          {% if user.is_authenticated %}
+          <li class="nav-item"> 
+            <a class="nav-link {% if view_name  == 'recipes:new_recipy' %}active{% endif %}" href="{% url 'recipes:new_recipy' %}">Новая запись</a>
+          </li>
+          <li class="nav-item"> 
+            <a class="nav-link link-light {% if view_name  == 'users:password_change' %}active{% endif %}" href="{% url 'users:password_change' %}">Изменить пароль</a>
+          </li>
+          <li class="nav-item"> 
+            <a class="nav-link link-light {% if view_name  == 'users:logged_out' %}active{% endif %}" href="{% url 'users:logout' %}">Выйти</a>
+          </li>
+          <li>
+            Пользователь: {{ user.username }}
+          </li>
+          {% else %}
+          <li class="nav-item"> 
+            <a class="nav-link link-light {% if view_name  == 'users:login' %}active{% endif %}" href="{% url 'users:login' %}">Войти</a>
+          </li>
+          <li class="nav-item"> 
+            <a class="nav-link link-light {% if view_name  == 'users:signup' %}active{% endif %}" href="{% url 'users:signup' %}">Регистрация</a>
+          </li>
+          {% endif %}
+        {% endwith %} 
+      </ul>
     </div>
-  </div>
+  </nav>         
 </header>

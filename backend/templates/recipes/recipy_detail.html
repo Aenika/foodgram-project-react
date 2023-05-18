@@ -1,67 +1,37 @@
 {% extends 'base.html' %}
-{% load static %}
+{% block title %} Рецепт {{ recipy.name }} {% endblock %}
 {% block content %}
-<!-- bradcam_area  -->
-<div class="bradcam_area bradcam_bg_2">
-    <div class="container">
-        <div class="row">
-            <div class="col-xl-12">
-                <div class="bradcam_text text-center">
-                    <h3>Рецепт "{{ post.author.get_full_name }}" от нашего автора !</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<!--/ bradcam_area  -->
-
- <!--================Blog Area =================-->
- <section class="blog_area single-post-area section-padding">
-    <div class="container">
-       <div class="row">
-          <div class="col-lg-8 posts-list">
-             <div class="single-post">
-                <div class="feature-img">
-                   <img class="img-fluid" src="img/blog/single_blog_1.png" alt="">
-                </div>
-                <div class="blog_details">
-                   <h2>Second divided from form fish beast made every of seas
-                      all gathered us saying he our
-                   </h2>
-                   <ul class="blog-info-link mt-3 mb-4">
-                      <li><a href="#"><i class="fa fa-user"></i> Travel, Lifestyle</a></li>
-                      <li><a href="#"><i class="fa fa-comments"></i> 03 Comments</a></li>
-                   </ul>
-                   <p class="excert">
-                      MCSE boot camps have its supporters and its detractors. Some people do not understand why you
-                      should have to spend money on boot camp when you can get the MCSE study materials yourself at a
-                      fraction of the camp price. However, who has the willpower
-                   </p>
-                   <p>
-                      MCSE boot camps have its supporters and its detractors. Some people do not understand why you
-                      should have to spend money on boot camp when you can get the MCSE study materials yourself at a
-                      fraction of the camp price. However, who has the willpower to actually sit through a
-                      self-imposed MCSE training. who has the willpower to actually
-                   </p>
-                   <div class="quote-wrapper">
-                      <div class="quotes">
-                         MCSE boot camps have its supporters and its detractors. Some people do not understand why you
-                         should have to spend money on boot camp when you can get the MCSE study materials yourself at
-                         a fraction of the camp price. However, who has the willpower to actually sit through a
-                         self-imposed MCSE training.
-                      </div>
-                   </div>
-                   <p>
-                      MCSE boot camps have its supporters and its detractors. Some people do not understand why you
-                      should have to spend money on boot camp when you can get the MCSE study materials yourself at a
-                      fraction of the camp price. However, who has the willpower
-                   </p>
-                   <p>
-                      MCSE boot camps have its supporters and its detractors. Some people do not understand why you
-                      should have to spend money on boot camp when you can get the MCSE study materials yourself at a
-                      fraction of the camp price. However, who has the willpower to actually sit through a
-                      self-imposed MCSE training. who has the willpower to actually
-                   </p>
-                </div>
-             </div>
+  <div class="row">
+    <aside class="col-12 col-md-3">
+      <header3>
+         {{ recipy.name }}
+       </header3>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+          Время приготовления: {{ recipy.cooking_time }} 
+        </li>
+        <li class="list-group-item">
+          Автор: {{ author.get_full_name }}
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Всего рецептов автора:  {{ author.recipes.count }}
+        </li>
+        <li class="list-group-item">
+          <a href="{% url 'recipes:profile' author %}">
+            Все рецепты пользователя
+          </a>
+        </li>
+      </ul>
+    </aside>
+    <article class="col-12 col-md-9">
+      <p>
+        {{ recipy.text }}
+      </p>
+      {% if user.id == author.id %}
+        <a class="btn btn-primary" href="{% url 'recipes:recipy_edit' recipy.id %}">
+          Редактировать запись
+        </a> 
+      {% endif %}
+    </article>
+  </div>
 {% endblock %}

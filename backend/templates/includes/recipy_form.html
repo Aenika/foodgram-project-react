@@ -1,21 +1,25 @@
 {% load static %}
-
-<article class="blog_item">
-  <div class="blog_item_img">
-    <img class="card-img rounded-0" src="{% static 'img/blog/single_blog_1.png' %}" alt="">
-    <a href="#" class="blog_item_date">
-      <h3>{{ recipy.cooking_time }}</h3>
-      <p>мин</p>
+{% with request.resolver_match.view_name as view_name %}
+  <ul>
+    <header>
+      {{ recipy.name }}
+    </header>
+    <li>
+      Автор: {{ recipy.author.get_full_name }}
+      {% if view_name != 'recipes:profile' %}
+        <a href="{% url 'recipes:profile' recipy.author %}">
+          Все посты пользователя
+        </a>
+      {% endif %}
+    </li>
+    <li>
+      Время приготовления: {{ recipy.cooking_time }}
+    </li>
+  </ul>
+  <p>{{ recipy.text|truncatechars:30 }}</p>
+  <p>
+    <a href="{% url 'recipes:recipy_detail' recipy.id %}">
+      Подробнее
     </a>
-  </div>
-  <div class="blog_details">
-    <a class="d-inline-block" href="single-blog.html">
-      <h2>{{ recipy.name }}</h2>
-    </a>
-    <p>{{ recipy.text|truncatechars:150 }}</p>
-    <ul class="blog-info-link">
-      <li><a href="#"><i class="fa fa-user"></i> Автор {{ recipy.author }}</a></li>
-      <li><a href="#"><i class="fa fa-newspaper-o"></i> Читать рецепт полностью</a></li>
-    </ul>
-  </div>
-</article>
+  </p>
+{% endwith %}

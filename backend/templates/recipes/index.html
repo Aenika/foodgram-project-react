@@ -1,73 +1,10 @@
 {% extends 'base.html' %}
-{% load static %}
+{% block title %}Последние обновления на сайте{% endblock %}
+{% block header %}Последние обновления на сайте{% endblock %}
 {% block content %}
-  <!-- slider_area_start -->
-  <div class="slider_area">
-    <div class="slider_active owl-carousel">
-      <div class="single_slider  d-flex align-items-center slider_bg_1 overlay">
-        <div class="container">
-          <div class="row align-items-center justify-content-center">
-            <div class="col-xl-9 col-md-9 col-md-12">
-              <div class="slider_text text-center">
-                <h3>Foodgram. Делитесь рецептами</h3>
-                <a href="{% url 'recipes:new_recipy' %}" class="boxed-btn3">Создать рецепт</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="single_slider  d-flex align-items-center slider_bg_2 overlay">
-        <div class="container">
-          <div class="row align-items-center justify-content-center">
-            <div class="col-xl-9 col-md-9 col-md-12">
-              <div class="slider_text text-center">
-                  <h3>Foodgram. Ешь, готовь, делись.</h3>
-                  <a href="{% url 'recipes:new_recipy' %}" class="boxed-btn3">Создать рецепт</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="single_slider  d-flex align-items-center slider_bg_1 overlay">
-        <div class="container">
-          <div class="row align-items-center justify-content-center">
-            <div class="col-xl-9 col-md-9 col-md-12">
-              <div class="slider_text text-center">
-                <h3>Foodgram. Для гурманов от гурманов</h3>
-                <a href="{% url 'recipes:new_recipy' %}" class="boxed-btn3">Создать рецепт</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- slider_area_end -->
-
-  <!-- Delicious area start  -->
-  <div class="Delicious_area">
-    <div class="container">
-      <div class="row">
-        <div class="col-xl-12">
-          <div class="section_title text-center mb-50">
-            <h3>Свежие рецепты</h3>
-            <img src="{% static 'img/for_recipes.png' %}">
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <section class="blog_area section-padding">
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-8 mb-5 mb-lg-0">
-            {% for recipy in recipes %}
-              {% include 'includes/recipy_form.html' %}
-            {% endfor %}  <div class="blog_left_sidebar">
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-  <!--/ Delicious area end  -->
+  {% for recipy in page_obj %}
+    {% include 'includes/recipy_form.html' %}
+    {% if not forloop.last %}<hr>{% endif %}
+  {% endfor %}
+  {% include 'includes/paginator.html' %}
 {% endblock %} 
