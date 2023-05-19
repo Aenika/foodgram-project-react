@@ -1,6 +1,9 @@
 {% load static %}
 {% with request.resolver_match.view_name as view_name %}
   <ul>
+    {% thumbnail post.image "339x339" crop="center" upscale=True as im %}
+      <img class="card-img my-2" src="{{ im.url }}">
+    {% endthumbnail %}
     <header>
       {{ recipy.name }}
     </header>

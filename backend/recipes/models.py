@@ -22,12 +22,10 @@ class Recipy(models.Model):
         help_text='Введите время приготовления в минутах'
     )
     pub_date = models.DateTimeField(auto_now_add=True)
-    # image = models.ImageField(
-    # verbose_name='Картинка',
-    # upload_to='recipes/',
-    # blank=True,
-    # help_text='Загрузите картинку'
-    # )
+    image = models.ImageField(
+        verbose_name='Картинка',
+        upload_to='recipes/',
+    )
 
     class Meta:
         ordering = ("-pub_date",)

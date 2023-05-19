@@ -4,7 +4,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = 'jbpau=g5i0v%4$q9b$qdc*bw@zej26g&p740)%+22t$)&i-*&p'
 
-# CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
 
 DEBUG = True
 
@@ -25,7 +24,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'users.apps.UsersConfig',
     'recipes.apps.RecipesConfig',
-    'core.apps.CoreConfig'
+    'core.apps.CoreConfig',
+    'sorl.thumbnail',
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -106,3 +106,6 @@ LOGIN_REDIRECT_URL = 'recipes:index'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
