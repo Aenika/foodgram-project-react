@@ -133,3 +133,5 @@ dmypy.json
 
 # служебные файлы VSCode
 .VSCode/
+
+media/
