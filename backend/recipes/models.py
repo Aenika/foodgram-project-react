@@ -34,3 +34,30 @@ class Recipy(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь, кто подписывается',
+        related_name='follower'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='following',
+        verbose_name='Подписки',
+    )
+
+    def __str__(self):
+        return f'Пользователь {self.user} подписан на автора {self.author}.'
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "author"], name="unique_follow"
+            )
+        ]

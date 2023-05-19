@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}Последние обновления на сайте{% endblock %}
-{% block header %}Последние обновления на сайте{% endblock %}
+{% block title %}Рецепты изранных авторов{% endblock %}
+{% block header %}Рецепты избранных авторов{% endblock %}
 {% block content %}
   {% include 'includes/switcher.html' %}
   {% for recipy in page_obj %}
@@ -8,4 +8,4 @@
     {% if not forloop.last %}<hr>{% endif %}
   {% endfor %}
   {% include 'includes/paginator.html' %}
-{% endblock %} 
+{% endblock %}

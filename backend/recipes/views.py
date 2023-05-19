@@ -1,9 +1,10 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import cache_page
 
 from .forms import RecipyForm
-from .models import Recipy, User
+from .models import Follow, Recipy, User
 
 recipes_per_page = 6
 
@@ -14,6 +15,7 @@ def paginising(recipes, recipes_per_page, request):
     return paginator.get_page(page_number)
 
 
+@cache_page(120)
 def index(request):
     recipes = Recipy.objects.order_by('-pub_date')
     page_obj = paginising(recipes, recipes_per_page, request)
@@ -67,9 +69,17 @@ def profile(request, username):
         author=author
     )
     page_obj = paginising(recipes_by_author, recipes_per_page, request)
+    following = (
+        request.user.is_authenticated
+        and request.user != author
+        and Follow.objects.filter(user=request.user, author=author).exists()
+    )
+    reader = request.user
     context = {
         'author': author,
-        'page_obj': page_obj
+        'page_obj': page_obj,
+        'following': following,
+        'reader': reader
     }
     return render(request, 'recipes/profile.html', context)
 
@@ -93,3 +103,33 @@ def recipy_edit(request, recipy_id):
                       'form': form,
                       'is_edit': True
                   })
+
+
+@login_required
+def follow_index(request):
+    recipes = Recipy.objects.select_related('author').filter(
+        author__following__user=request.user
+    )
+    page_obj = paginising(recipes, recipes_per_page, request)
+    context = {'page_obj': page_obj}
+    return render(request, 'recipes/follow.html', context)
+
+
+@login_required
+def profile_follow(request, username):
+    author = get_object_or_404(User, username=username)
+    follower = request.user
+    already_following = Follow.objects.filter(user=follower, author=author)
+    if author != follower and not already_following.exists():
+        Follow.objects.create(user=follower, author=author)
+    return redirect('recipes:follow_index')
+
+
+@login_required
+def profile_unfollow(request, username):
+    author = get_object_or_404(User, username=username)
+    follower = request.user
+    already_following = Follow.objects.filter(user=follower, author=author)
+    if already_following.exists():
+        already_following.delete()
+    return redirect('recipes:follow_index')
