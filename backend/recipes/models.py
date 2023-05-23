@@ -2,6 +2,24 @@ from django.db import models
 from users.models import User
 
 
+class Tag(models.Model):
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Название тега',
+        unique=True
+    )
+    slug = models.SlugField(unique=True, verbose_name='Слаг тега')
+    hexcolor = models.CharField(max_length=7, unique=True, default="#ffffff")
+
+    class Meta:
+        ordering = ("name",)
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
+
+    def __str__(self):
+        return self.name
+
+
 class Recipy(models.Model):
     author = models.ForeignKey(
         User,
@@ -26,6 +44,7 @@ class Recipy(models.Model):
         verbose_name='Картинка',
         upload_to='recipes/',
     )
+    tags = models.ManyToManyField(Tag, verbose_name='Теги')
 
     class Meta:
         ordering = ("-pub_date",)

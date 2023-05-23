@@ -17,6 +17,15 @@
         <li class="list-group-item">
           Автор: {{ author.get_full_name }}
         </li>
+        <li class="list-group-item">
+          {% for tag in tags %}
+          <li class="list-group-item">
+            <a href="{% url 'recipes:recipes_by_tag' tag.slug %}">
+              {{ tag }}
+            </a>
+          </li>
+          {% endfor %}
+        </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
           Всего рецептов автора:  {{ author.recipes.count }}
         </li>

@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import cache_page
 
 from .forms import RecipyForm
-from .models import Follow, Recipy, User
+from .models import Follow, Recipy, Tag, User
 
 recipes_per_page = 6
 
@@ -42,25 +42,61 @@ def create_recipy(request):
 def recipy_detail(request, recipy_id):
     recipy = Recipy.objects.get(id=recipy_id)
     author = recipy.author
+    tags = Recipy.objects.get(id=recipy_id).tags.all()
     context = {
         'recipy': recipy,
         'author': author,
+        'tags': tags
     }
     return render(request, 'recipes/recipy_detail.html', context)
 
 
 def search(request):
+    keyword = request.GET.get('q')
+    if keyword:
+        recipes = Recipy.objects.select_related('author').filter(
+            text__icontains=keyword
+        )
+    else:
+        recipes = None
+    context = {
+        'recipes': recipes,
+        'keyword': keyword,
+    }
+
+    return render(request, "recipes/search.html", context)
+
+
+def search(request):
     keyword = request.GET.get("q", None)
     if keyword:
-        posts = Recipy.objects.filter(text__contains=keyword).get()
+        recipes = Recipy.objects.select_related('author').filter(
+            text__contains=keyword
+        )
     else:
-        posts = None
+        recipes = None
 
-    return render(request, "index.html", {"posts": posts, "keyword": keyword})
+    return render(
+        request,
+        "recipes/search.html",
+        {"recipes": recipes,
+         "keyword": keyword}
+    )
 
 # Recipy.objects.select_related('author').select_related('group').filter(text__contains=keyword).get()
 # Запрос сделайте так, чтобы при обращении к свойствам модели author и group
 # не порождались дополнительные запросы к базе.
+
+
+def recipes_by_tag(request, slug):
+    tag = get_object_or_404(Tag, slug=slug)
+    recipes = Recipy.objects.filter(tags__slug=slug)
+    page_obj = paginising(recipes, recipes_per_page, request)
+    context = {
+        'tag': tag,
+        'page_obj': page_obj
+    }
+    return render(request, "recipes/recipes_by_tag.html", context)
 
 
 def profile(request, username):

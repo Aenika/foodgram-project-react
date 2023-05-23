@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from . import views
 
@@ -29,5 +29,10 @@ urlpatterns = [
         views.profile_unfollow,
         name='profile_unfollow'
     ),
-    # path('search/', views.search, name='search')
+    re_path(r'^search/$', views.search, name='search'),
+    path(
+        'recipes_by_tag/<str:slug>/',
+        views.recipes_by_tag,
+        name='recipes_by_tag'
+    )
 ]

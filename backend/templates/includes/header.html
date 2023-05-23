@@ -7,6 +7,9 @@
       </a>
       {% with request.resolver_match.view_name as view_name %}
         <ul class="nav nav-pills">
+          <li class="nav-item"> 
+            <a class="nav-link link-light {% if view_name  == 'recipes:search' %}active{% endif %}" href="{% url 'recipes:search' %}">Поиск</a>
+          </li>
           {% if user.is_authenticated %}
           <li class="nav-item"> 
             <a class="nav-link {% if view_name  == 'recipes:new_recipy' %}active{% endif %}" href="{% url 'recipes:new_recipy' %}">Новая запись</a>
