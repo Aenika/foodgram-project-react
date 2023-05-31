@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'recipes.apps.RecipesConfig',
     'core.apps.CoreConfig',
     'sorl.thumbnail',
+    'rest_framework',
 ]
 
 AUTH_USER_MODEL = 'users.User'

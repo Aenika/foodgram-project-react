@@ -1,5 +1,32 @@
+from core.models import FavoriteShoppingModel
 from django.db import models
 from users.models import User
+
+
+class Ingredient(models.Model):
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Название ингредиента',
+        unique=False,
+    )
+    measurement_unit = models.CharField(
+        max_length=200,
+        verbose_name='Единицы измерения',
+        unique=False
+    )
+
+    class Meta:
+        ordering = ("name",)
+        verbose_name = 'Ингредиент'
+        verbose_name_plural = 'Ингредиенты'
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "measurement_unit"], name="unique_Ingredient"
+            )
+        ]
+
+    def __str__(self):
+        return self.name
 
 
 class Tag(models.Model):
@@ -9,7 +36,12 @@ class Tag(models.Model):
         unique=True
     )
     slug = models.SlugField(unique=True, verbose_name='Слаг тега')
-    hexcolor = models.CharField(max_length=7, unique=True, default="#ffffff")
+    color = models.CharField(
+        max_length=7,
+        unique=True,
+        default="#ffffff",
+        verbose_name='Цвет тега'
+    )
 
     class Meta:
         ordering = ("name",)
@@ -33,7 +65,7 @@ class Recipy(models.Model):
     )
     text = models.TextField(
         verbose_name='Текст рецепта',
-        help_text='Введите описание блюда и методов приготовления'
+        help_text='Введите описание блюда и метод приготовления'
     )
     cooking_time = models.DurationField(
         verbose_name='Время приготовления рецепта',
@@ -44,7 +76,15 @@ class Recipy(models.Model):
         verbose_name='Картинка',
         upload_to='recipes/',
     )
-    tags = models.ManyToManyField(Tag, verbose_name='Теги')
+    tags = models.ManyToManyField(
+        Tag, verbose_name='Теги', related_name='recipes'
+    )
+    ingredients = models.ManyToManyField(
+        Ingredient,
+        through="Dosage",
+        verbose_name='Ингредиенты',
+        related_name='recipes'
+    )
 
     class Meta:
         ordering = ("-pub_date",)
@@ -53,6 +93,25 @@ class Recipy(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Dosage(models.Model):
+    recipy = models.ForeignKey(Recipy, on_delete=models.DO_NOTHING)
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.DO_NOTHING)
+    amount: int = models.PositiveSmallIntegerField(
+        verbose_name='Количество',
+        help_text='Введите необходимое количество ингредиента'
+    )
+
+    def measurement_unit(self):
+        return self.ingredient.measurement_unit
+
+    class Meta:
+        verbose_name = 'Ингредиент рецепта'
+        verbose_name_plural = 'Ингредиенты рецепта'
+
+    def __str__(self):
+        return f'{self.ingredient} : {self.amount} {self.measurement_unit}'
 
 
 class Follow(models.Model):
@@ -80,3 +139,23 @@ class Follow(models.Model):
                 fields=["user", "author"], name="unique_follow"
             )
         ]
+
+
+class ShoppingCart(FavoriteShoppingModel):
+
+    class Meta:
+        verbose_name = 'Список покупок'
+        verbose_name_plural = 'Списки покупок'
+
+    def __str___(self):
+        return f'{self.user} добавил в покупки рецепт {self.recipy}'
+
+
+class Favorite(FavoriteShoppingModel):
+
+    class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = verbose_name
+
+    def __str___(self):
+        return f'{self.user} добавил в избранное рецепт {self.recipy}'
