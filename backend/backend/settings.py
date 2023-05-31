@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'sorl.thumbnail',
     'rest_framework',
+    'api.apps.ApiConfig',
 ]
 
 AUTH_USER_MODEL = 'users.User'
