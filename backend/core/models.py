@@ -4,7 +4,9 @@ from django.db import models
 class RecipyToUserModel(models.Model):
     recipy = models.ManyToManyField(
         "recipes.Recipy",
-        verbose_name='рецепт'
+        verbose_name='рецепт',
+        related_name="%(app_label)s_%(class)s_related",
+        related_query_name="%(app_label)s_%(class)ss",
     )
     user = models.ManyToManyField(
         "users.User",

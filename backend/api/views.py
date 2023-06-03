@@ -1,6 +1,6 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from recipes.models import Favorite, Ingredient, Recipy, ShoppingCart, Tag
-from rest_framework import permissions, viewsets
+from rest_framework import filters, permissions, viewsets
 from users.models import Follow
 
 from .pagination import CustomPagination
@@ -32,6 +32,8 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (filters.SearchFilter)
+    search_fields = ('^name',)
 
 
 class SubscriptonViewSet(CreateDestroyListViewSet):

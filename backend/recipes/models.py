@@ -124,11 +124,6 @@ class Dosage(models.Model):
 
 
 class ShoppingCart(RecipyToUserModel):
-    user = models.ManyToManyField(
-        "users.User",
-        verbose_name='пользователь',
-        related_name=''
-    )
 
     class Meta:
         verbose_name = 'Список покупок'
