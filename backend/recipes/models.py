@@ -1,4 +1,6 @@
-from core.models import FavoriteShoppingModel
+from core.models import RecipyToUserModel
+from django.core.validators import (MaxValueValidator, MinValueValidator,
+                                    RegexValidator)
 from django.db import models
 from users.models import User
 
@@ -40,7 +42,10 @@ class Tag(models.Model):
         max_length=7,
         unique=True,
         default="#ffffff",
-        verbose_name='Цвет тега'
+        verbose_name='Цвет тега',
+        validators=[
+            RegexValidator(regex=r'^\#[\w]{6}$')
+        ]
     )
 
     class Meta:
@@ -69,7 +74,11 @@ class Recipy(models.Model):
     )
     cooking_time = models.DurationField(
         verbose_name='Время приготовления рецепта',
-        help_text='Введите время приготовления в минутах'
+        help_text='Введите время приготовления в минутах',
+        validators=[
+            MinValueValidator(1, 'Время готовки не может быть меньше минуты!'),
+            MaxValueValidator(720, '')
+        ]
     )
     pub_date = models.DateTimeField(auto_now_add=True)
     image = models.ImageField(
@@ -114,34 +123,12 @@ class Dosage(models.Model):
         return f'{self.ingredient} : {self.amount} {self.measurement_unit}'
 
 
-class Follow(models.Model):
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='Пользователь, кто подписывается',
-        related_name='follower'
+class ShoppingCart(RecipyToUserModel):
+    user = models.ManyToManyField(
+        "users.User",
+        verbose_name='пользователь',
+        related_name=''
     )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='following',
-        verbose_name='Подписки',
-    )
-
-    def __str__(self):
-        return f'Пользователь {self.user} подписан на автора {self.author}.'
-
-    class Meta:
-        verbose_name = 'Подписка'
-        verbose_name_plural = 'Подписки'
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "author"], name="unique_follow"
-            )
-        ]
-
-
-class ShoppingCart(FavoriteShoppingModel):
 
     class Meta:
         verbose_name = 'Список покупок'
@@ -151,7 +138,7 @@ class ShoppingCart(FavoriteShoppingModel):
         return f'{self.user} добавил в покупки рецепт {self.recipy}'
 
 
-class Favorite(FavoriteShoppingModel):
+class Favorite(RecipyToUserModel):
 
     class Meta:
         verbose_name = 'Избранное'

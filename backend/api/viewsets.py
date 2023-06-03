@@ -7,5 +7,7 @@ class CreateDestroyListViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet
 ):
-    """Создает вьюсет с тремя методами: вернуть список, удалить и создать"""
-    pass
+    """Создает вьюсет с тремя методами: создать, удалить и вернуть список"""
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(user=user)
