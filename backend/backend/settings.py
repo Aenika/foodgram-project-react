@@ -28,6 +28,8 @@ INSTALLED_APPS = [
     'sorl.thumbnail',
     'rest_framework',
     'api.apps.ApiConfig',
+    'djoser',
+    'rest_framework.authtoken',
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -116,4 +118,18 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+}
+
+DJOSER = {
+    'LOGIN_FIELD': 'email'
 }
