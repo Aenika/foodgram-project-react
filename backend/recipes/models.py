@@ -37,7 +37,6 @@ class Tag(models.Model):
         verbose_name='Название тега',
         unique=True
     )
-    slug = models.SlugField(unique=True, verbose_name='Слаг тега')
     color = models.CharField(
         max_length=7,
         unique=True,
@@ -47,6 +46,7 @@ class Tag(models.Model):
             RegexValidator(regex=r'^\#[\w]{6}$')
         ]
     )
+    slug = models.SlugField(unique=True, verbose_name='Слаг тега')
 
     class Meta:
         ordering = ("name",)
@@ -58,42 +58,45 @@ class Tag(models.Model):
 
 
 class Recipy(models.Model):
+    tags = models.ManyToManyField(
+        Tag,
+        verbose_name='Теги',
+        related_name='recipes',
+        through='RecipyTags'
+    )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор',
         related_name='recipes'
     )
+    ingredients = models.ManyToManyField(
+        Ingredient,
+        through='Dosage',
+        verbose_name='Ингредиенты',
+        related_name='recipes'
+    )
     name = models.CharField(
         max_length=200,
         verbose_name='Название рецепта'
+    )
+    image = models.ImageField(
+        verbose_name='Картинка',
+        upload_to='recipes/',
     )
     text = models.TextField(
         verbose_name='Текст рецепта',
         help_text='Введите описание блюда и метод приготовления'
     )
-    cooking_time = models.DurationField(
+    cooking_time = models.IntegerField(
         verbose_name='Время приготовления рецепта',
         help_text='Введите время приготовления в минутах',
         validators=[
             MinValueValidator(1, 'Время готовки не может быть меньше минуты!'),
-            MaxValueValidator(720, '')
+            MaxValueValidator(720, 'Время готовки более 12 часов? Помилуйте!')
         ]
     )
     pub_date = models.DateTimeField(auto_now_add=True)
-    image = models.ImageField(
-        verbose_name='Картинка',
-        upload_to='recipes/',
-    )
-    tags = models.ManyToManyField(
-        Tag, verbose_name='Теги', related_name='recipes'
-    )
-    ingredients = models.ManyToManyField(
-        Ingredient,
-        through="Dosage",
-        verbose_name='Ингредиенты',
-        related_name='recipes'
-    )
 
     class Meta:
         ordering = ("-pub_date",)
@@ -104,23 +107,43 @@ class Recipy(models.Model):
         return self.name
 
 
+class RecipyTags(models.Model):
+    recipy = models.ForeignKey(Recipy, on_delete=models.CASCADE)
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'тег рецепта'
+        verbose_name_plural = 'теги рецепта'
+
+    def __str__(self):
+        return f'{self.tag} у рецепта {self.recipy}'
+
+
 class Dosage(models.Model):
-    recipy = models.ForeignKey(Recipy, on_delete=models.DO_NOTHING)
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.DO_NOTHING)
-    amount: int = models.PositiveSmallIntegerField(
+    recipy = models.ForeignKey(
+        Recipy,
+        on_delete=models.CASCADE,
+        related_name='recipyingredient'
+    )
+    ingredient = models.ForeignKey(
+        Ingredient,
+        on_delete=models.CASCADE,
+        verbose_name='Ингредиент'
+    )
+    amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
         help_text='Введите необходимое количество ингредиента'
     )
-
-    def measurement_unit(self):
-        return self.ingredient.measurement_unit
 
     class Meta:
         verbose_name = 'Ингредиент рецепта'
         verbose_name_plural = 'Ингредиенты рецепта'
 
     def __str__(self):
-        return f'{self.ingredient} : {self.amount} {self.measurement_unit}'
+        return (
+            f'{self.ingredient.name} ({self.ingredient.measurement_unit})'
+            f' — {self.amount} '
+        )
 
 
 class ShoppingCart(RecipyToUserModel):

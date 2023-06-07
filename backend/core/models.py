@@ -2,17 +2,19 @@ from django.db import models
 
 
 class RecipyToUserModel(models.Model):
-    recipy = models.ManyToManyField(
+    recipy = models.ForeignKey(
         "recipes.Recipy",
         verbose_name='рецепт',
         related_name="%(app_label)s_%(class)s_related",
         related_query_name="%(app_label)s_%(class)ss",
+        on_delete=models.CASCADE
     )
-    user = models.ManyToManyField(
+    user = models.ForeignKey(
         "users.User",
         verbose_name='пользователь',
         related_name="%(app_label)s_%(class)s_related",
         related_query_name="%(app_label)s_%(class)ss",
+        on_delete=models.CASCADE
     )
 
     class Meta:

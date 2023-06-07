@@ -37,7 +37,6 @@ class User(AbstractUser):
                                 blank=True,
                                 null=True,
                                 verbose_name='Пароль')
-    # id =
     username = models.CharField(max_length=CHARS_FOR_USERNAME,
                                 blank=False,
                                 null=False,
@@ -63,12 +62,12 @@ class Follow(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь, кто подписывается',
-        related_name='follower'
+        related_name='following'
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='following',
+        related_name='follower',
         verbose_name='Подписки',
     )
 
