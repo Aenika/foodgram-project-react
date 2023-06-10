@@ -1,15 +1,11 @@
+# flake8: noqa: I001, I004
 from django.contrib.auth.models import AbstractUser, UserManager
+from django.core.validators import RegexValidator
 from django.db import models
 
-ADMIN = 'admin'
-REG_USER = 'user'
-CHARS_FOR_EMAIL = 254
-CHARS_FOR_PASSWORD = 150
-CHARS_FOR_ROLE = 5
-CHARS_FOR_USERNAME = 150
-CHARS_FOR_FIRST_NAME = 150
-CHARS_FOR_LAST_NAME = 150
-
+from core.constants import (ADMIN, CHARS_FOR_EMAIL, CHARS_FOR_FIRST_NAME,
+                            CHARS_FOR_LAST_NAME, CHARS_FOR_PASSWORD,
+                            CHARS_FOR_ROLE, CHARS_FOR_USERNAME, REG_USER)
 
 class CustomUserManager(UserManager):
     def create_superuser(self, username, email, password, **extra_fields):
@@ -41,7 +37,10 @@ class User(AbstractUser):
                                 blank=False,
                                 null=False,
                                 unique=True,
-                                verbose_name='Логин')
+                                verbose_name='Логин',
+                                validators=[
+                                    RegexValidator(regex=r'^[\w.@+-]+\Z$')
+                                ])
     first_name = models.CharField(max_length=CHARS_FOR_FIRST_NAME,
                                   blank=False,
                                   null=False,

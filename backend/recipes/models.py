@@ -1,13 +1,18 @@
-from core.models import RecipyToUserModel
+# flake8: noqa: I001, I004
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.db import models
+
+from core.constants import (CHARS_FOR_INGREDIENT_NAME, CHARS_FOR_RECIPY_NAME,
+                            CHARS_FOR_TAG_NAME, CHARS_FOR_TAG_SLUG,
+                            MAX_COOKING_TIME, MIN_COOKING_TIME)
+from core.models import RecipyToUserModel
 from users.models import User
 
 
 class Ingredient(models.Model):
     name = models.CharField(
-        max_length=200,
+        max_length=CHARS_FOR_INGREDIENT_NAME,
         verbose_name='Название ингредиента',
         unique=False,
     )
@@ -33,7 +38,7 @@ class Ingredient(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(
-        max_length=200,
+        max_length=CHARS_FOR_TAG_NAME,
         verbose_name='Название тега',
         unique=True
     )
@@ -46,7 +51,9 @@ class Tag(models.Model):
             RegexValidator(regex=r'^\#[\w]{6}$')
         ]
     )
-    slug = models.SlugField(unique=True, verbose_name='Слаг тега')
+    slug = models.SlugField(
+        unique=True, verbose_name='Слаг тега', max_length=CHARS_FOR_TAG_SLUG
+    )
 
     class Meta:
         ordering = ("name",)
@@ -77,7 +84,7 @@ class Recipy(models.Model):
         related_name='recipes'
     )
     name = models.CharField(
-        max_length=200,
+        max_length=CHARS_FOR_RECIPY_NAME,
         verbose_name='Название рецепта'
     )
     image = models.ImageField(
@@ -92,8 +99,14 @@ class Recipy(models.Model):
         verbose_name='Время приготовления рецепта',
         help_text='Введите время приготовления в минутах',
         validators=[
-            MinValueValidator(1, 'Время готовки не может быть меньше минуты!'),
-            MaxValueValidator(720, 'Время готовки более 12 часов? Помилуйте!')
+            MinValueValidator(
+                MIN_COOKING_TIME,
+                f'Время готовки не может быть меньше {MIN_COOKING_TIME}!'
+            ),
+            MaxValueValidator(
+                MAX_COOKING_TIME,
+                f'Время готовки более {MAX_COOKING_TIME/60} часов? Помилуйте!'
+            )
         ]
     )
     pub_date = models.DateTimeField(auto_now_add=True)

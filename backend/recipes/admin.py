@@ -1,15 +1,17 @@
 from django.contrib import admin
 
-from .models import Dosage, Favorite, Ingredient, Recipy, RecipyTags, Tag
+from .models import (Dosage, Favorite, Ingredient, Recipy, RecipyTags,
+                     ShoppingCart, Tag)
 
 
 class TagAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug', 'color')
-    list_filter = ('name',)
 
 
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('name', 'measurement_unit')
+    list_filter = ('name',)
+    search_fields = ('name',)
 
 
 class TagInline(admin.TabularInline):
@@ -33,6 +35,12 @@ class RecipyAdmin(admin.ModelAdmin):
         Favorite.objects.filter(recipy=obj).count()
 
 
+class RecipyToUserAdmin(admin.ModelAdmin):
+    list_display = ('user', 'recipy')
+
+
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipy, RecipyAdmin)
+admin.site.register(ShoppingCart, RecipyToUserAdmin)
+admin.site.register(Favorite, RecipyToUserAdmin)

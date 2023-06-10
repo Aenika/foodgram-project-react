@@ -1,12 +1,18 @@
+# flake8: noqa: I001, I004
 import base64
 
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
+from rest_framework import serializers
+from rest_framework.validators import ValidationError
+
+from core.constants import (CHARS_FOR_EMAIL, CHARS_FOR_FIRST_NAME,
+                            CHARS_FOR_LAST_NAME, CHARS_FOR_PASSWORD,
+                            CHARS_FOR_RECIPY_NAME, CHARS_FOR_USERNAME,
+                            MAX_COOKING_TIME, MIN_COOKING_TIME)
 from recipes.models import (Dosage, Favorite, Ingredient, Recipy, RecipyTags,
                             ShoppingCart, Tag)
-from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator, ValidationError
 from users.models import Follow, User
 
 
@@ -18,48 +24,6 @@ class Base64ImageField(serializers.ImageField):
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
 
         return super().to_internal_value(data)
-
-
-class UserRegistrationSerializer(UserCreateSerializer):
-    class Meta(UserCreateSerializer.Meta):
-        fields = ('email', 'username', 'first_name', 'last_name', 'password')
-
-
-class RecipesShort(serializers.ModelSerializer):
-    class Meta:
-        fields = ('id', 'name', 'image', 'cooking_time')
-        model = Recipy
-
-
-class CustomUserSerializer(UserSerializer):
-    is_subscribed = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
-    recipes = RecipesShort(read_only=True, many=True)
-
-    class Meta:
-        model = User
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-            'recipes',
-            'recipes_count'
-
-        )
-
-    def get_is_subscribed(self, obj):
-        request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
-            return False
-        return Follow.objects.filter(
-            user=request.user, author=obj
-        ).exists()
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -74,6 +38,78 @@ class IngredientSerializer(serializers.ModelSerializer):
         model = Ingredient
 
 
+class UserRegistrationSerializer(UserCreateSerializer):
+    class Meta(UserCreateSerializer.Meta):
+        fields = ['email', 'username', 'first_name', 'last_name', 'password']
+
+    def validate(self, data):
+        fields = {
+            'email': CHARS_FOR_EMAIL,
+            'username': CHARS_FOR_USERNAME,
+            'first_name': CHARS_FOR_FIRST_NAME,
+            'last_name': CHARS_FOR_LAST_NAME,
+            'password': CHARS_FOR_PASSWORD
+        }
+        for key, value in fields.items():
+            if len(data[key]) > value:
+                raise serializers.ValidationError(
+                    f'Это поле должно быть не более {value} символов!'
+                )
+        return data
+
+
+class RecipesShort(serializers.ModelSerializer):
+    image = Base64ImageField(read_only=True)
+
+    class Meta:
+        fields = ('id', 'name', 'image', 'cooking_time')
+        model = Recipy
+
+
+class CustomUserSerializer(UserSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+        )
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request is None or request.user.is_anonymous:
+            return False
+        return Follow.objects.filter(
+            user=request.user, author=obj
+        ).exists()
+
+
+class UserRecipesSerializer(CustomUserSerializer):
+    recipes = RecipesShort(read_only=True, many=True)
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count'
+        )
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
+
+
 class DosageSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(
         source='ingredient.id'
@@ -86,15 +122,6 @@ class DosageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dosage
         fields = ('id', 'name', 'measurement_unit', 'amount')
-
-
-class DosageCreateSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
-    amount = serializers.IntegerField()
-
-    class Meta:
-        model = Dosage
-        fields = ('id', 'amount')
 
 
 class RecipyGetSerializer(serializers.ModelSerializer):
@@ -141,11 +168,7 @@ class RecipyGetSerializer(serializers.ModelSerializer):
         ).exists()
 
 
-class RecipyShortSerializer(serializers.ModelSerializer):
-    is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.SerializerMethodField()
-    image = Base64ImageField(read_only=True)
-    tags = TagSerializer(read_only=True, many=True)
+class RecipyShortSerializer(RecipyGetSerializer):
     author = serializers.SerializerMethodField()
 
     class Meta:
@@ -160,25 +183,32 @@ class RecipyShortSerializer(serializers.ModelSerializer):
         ]
         model = Recipy
 
-    def get_is_favorited(self, obj):
-        request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
-            return False
-        return Favorite.objects.filter(
-            user=request.user, recipy=obj
-        ).exists()
-
-    def get_is_in_shopping_cart(self, obj):
-        request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
-            return False
-        return ShoppingCart.objects.filter(
-            user=request.user, recipy=obj
-        ).exists()
-
     def get_author(self, obj):
         author = obj.author
         return author.get_full_name()
+
+
+class DosageCreateSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    amount = serializers.IntegerField()
+
+    class Meta:
+        model = Dosage
+        fields = ('id', 'amount')
+
+
+def dosagecreation(dosagelist, recipy):
+    for ingredient in dosagelist:
+        amount = ingredient['amount']
+        id = ingredient['id']
+        current_ingredient = get_object_or_404(
+            Ingredient, id=id
+        )
+        Dosage.objects.create(
+            ingredient=current_ingredient,
+            amount=amount,
+            recipy=recipy
+        )
 
 
 class RecipySerializer(serializers.ModelSerializer):
@@ -205,80 +235,41 @@ class RecipySerializer(serializers.ModelSerializer):
         read_only_fields = ('author',)
 
     def validate(self, data):
-        if data['cooking_time'] < 1:
+        if data['cooking_time'] < MIN_COOKING_TIME:
             raise ValidationError(
-                'Время готовки должно быть больше 1 минуты!')
-        if data['cooking_time'] > 720:
+                f'Время готовки должно быть не менее {MIN_COOKING_TIME}!')
+        if data['cooking_time'] > MAX_COOKING_TIME:
             raise ValidationError(
-                'Время готовки более 12 часов? Помилуйте!')
+                f'Время готовки более {MAX_COOKING_TIME/60} часов? Помилуйте!')
+        if len(data['name']) > CHARS_FOR_RECIPY_NAME:
+            raise ValidationError(
+                'Слишком длинное название'
+            )
         return data
 
     def create(self, validated_data):
         current_user = self.context['request'].user
         tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredients')
+        recipyingredients = validated_data.pop('recipyingredient')
         recipy = Recipy.objects.create(author=current_user, **validated_data)
         for tag in tags:
             RecipyTags.objects.create(tag=tag, recipy=recipy)
-        for ingredient in ingredients:
-            amount = ingredient['amount']
-            id = ingredient['id']
-            current_ingredient = get_object_or_404(
-                Ingredient, id=id
-            )
-            Dosage.objects.create(
-                ingredient=current_ingredient,
-                amount=amount,
-                recipy=recipy
-            )
+        dosagecreation(recipyingredients, recipy)
         return recipy
 
-
-class FollowSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        fields = ('user', 'author')
-        model = Follow
-        read_only_fields = ('user',)
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Follow.objects.all(),
-                fields=['user', 'author'],
-                message='Такая подписка уже есть'
-            )
-        ]
-
-    def validate(self, data):
-        if self.context['request'].user == data['author']:
-            raise ValidationError(
-                'На себя нельзя подписываться, даже если ты очень хорош!'
-            )
-        return data
-
-
-class ShoppingCartSerializer(serializers.ModelSerializer):
-    class Meta:
-        fields = ('__all__')
-        model = ShoppingCart
-        read_only_fields = ('user',)
-        validators = [
-            UniqueTogetherValidator(
-                queryset=ShoppingCart.objects.all(),
-                fields=['user', 'recipy'],
-                message='Рецепт уже в списке покупок'
-            )
-        ]
-
-
-class FavoriteSerializer(serializers.ModelSerializer):
-    class Meta:
-        fields = ('__all__')
-        model = Favorite
-        read_only_fields = ('user',)
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Favorite.objects.all(),
-                fields=['user', 'recipy'],
-                message='Рецепт уже в списке избранного'
-            )
-        ]
+    def update(self, instance, validated_data):
+        tags = validated_data.pop('tags')
+        recipyingredients = validated_data.pop('recipyingredient')
+        RecipyTags.objects.filter(recipy=instance).delete()
+        Dosage.objects.filter(recipy=instance).delete()
+        instance.name = validated_data.get('name', instance.name)
+        instance.cooking_time = validated_data.get(
+            'cooking_time', instance.cooking_time
+        )
+        instance.text = validated_data.get('text', instance.text)
+        instance.image = validated_data.get('image', instance.image)
+        for tag in tags:
+            RecipyTags.objects.create(tag=tag, recipy=instance)
+        dosagecreation(recipyingredients, instance)
+        instance.save()
+        return instance

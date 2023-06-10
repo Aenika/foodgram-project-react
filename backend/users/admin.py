@@ -1,13 +1,17 @@
 from django.contrib import admin
 
-from .models import User
+from .models import Follow, User
 
 
 class UserAdmin(admin.ModelAdmin):
     list_display = ('email', 'username', 'role',)
     search_fields = ('email', 'username', 'role',)
     list_filter = ('email', 'username')
-    empty_value_display = '-пусто-'
+
+
+class FollowAdmin(admin.ModelAdmin):
+    list_display = ('user', 'author')
 
 
 admin.site.register(User, UserAdmin)
+admin.site.register(Follow, FollowAdmin)
