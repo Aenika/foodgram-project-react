@@ -6,5 +6,5 @@ class CreateDestroyViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet
 ):
-    """Создает вьюсет с двумя методами: создать и удалить"""
+    """Создает вьюсет с двумя методами: создать и удалить."""
     pass

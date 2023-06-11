@@ -11,24 +11,25 @@ from users.models import User
 
 
 class Ingredient(models.Model):
-    name = models.CharField(
+    """Класс для представления ингредиентов."""
+    name: str = models.CharField(
         max_length=CHARS_FOR_INGREDIENT_NAME,
         verbose_name='Название ингредиента',
         unique=False,
     )
-    measurement_unit = models.CharField(
+    measurement_unit: str = models.CharField(
         max_length=200,
         verbose_name='Единицы измерения',
         unique=False
     )
 
     class Meta:
-        ordering = ("name",)
+        ordering = ('name',)
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
         constraints = [
             models.UniqueConstraint(
-                fields=["name", "measurement_unit"], name="unique_Ingredient"
+                fields=['name', 'measurement_unit'], name='unique_Ingredient'
             )
         ]
 
@@ -37,26 +38,27 @@ class Ingredient(models.Model):
 
 
 class Tag(models.Model):
-    name = models.CharField(
+    """Класс для представления тегов."""
+    name: str = models.CharField(
         max_length=CHARS_FOR_TAG_NAME,
         verbose_name='Название тега',
         unique=True
     )
-    color = models.CharField(
+    color: str = models.CharField(
         max_length=7,
         unique=True,
-        default="#ffffff",
+        default='#ffffff',
         verbose_name='Цвет тега',
         validators=[
             RegexValidator(regex=r'^\#[\w]{6}$')
         ]
     )
-    slug = models.SlugField(
+    slug: str = models.SlugField(
         unique=True, verbose_name='Слаг тега', max_length=CHARS_FOR_TAG_SLUG
     )
 
     class Meta:
-        ordering = ("name",)
+        ordering = ('name',)
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
 
@@ -65,6 +67,7 @@ class Tag(models.Model):
 
 
 class Recipy(models.Model):
+    """Класс для представления рецептов."""
     tags = models.ManyToManyField(
         Tag,
         verbose_name='Теги',
@@ -83,7 +86,7 @@ class Recipy(models.Model):
         verbose_name='Ингредиенты',
         related_name='recipes'
     )
-    name = models.CharField(
+    name: str = models.CharField(
         max_length=CHARS_FOR_RECIPY_NAME,
         verbose_name='Название рецепта'
     )
@@ -91,11 +94,11 @@ class Recipy(models.Model):
         verbose_name='Картинка',
         upload_to='recipes/',
     )
-    text = models.TextField(
+    text: str = models.TextField(
         verbose_name='Текст рецепта',
         help_text='Введите описание блюда и метод приготовления'
     )
-    cooking_time = models.IntegerField(
+    cooking_time: int = models.IntegerField(
         verbose_name='Время приготовления рецепта',
         help_text='Введите время приготовления в минутах',
         validators=[
@@ -112,7 +115,7 @@ class Recipy(models.Model):
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ("-pub_date",)
+        ordering = ('-pub_date',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
@@ -121,8 +124,9 @@ class Recipy(models.Model):
 
 
 class RecipyTags(models.Model):
-    recipy = models.ForeignKey(Recipy, on_delete=models.CASCADE)
-    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+    """Класс для промежуточной связи полей многие-ко-многим рецепты-теги."""
+    recipy = models.ForeignKey(Recipy, on_delete=models.CASCADE, verbose_name="Рецепт")
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, verbose_name="Тег")
 
     class Meta:
         verbose_name = 'тег рецепта'
@@ -133,17 +137,19 @@ class RecipyTags(models.Model):
 
 
 class Dosage(models.Model):
+    """Класс для связи полей многие-ко-многим рецепты-ингредиенты, добавляет поле количество."""
     recipy = models.ForeignKey(
         Recipy,
         on_delete=models.CASCADE,
-        related_name='recipyingredient'
+        related_name='recipyingredient',
+        verbose_name='Рецепт'
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
         verbose_name='Ингредиент'
     )
-    amount = models.PositiveSmallIntegerField(
+    amount: int = models.PositiveSmallIntegerField(
         verbose_name='Количество',
         help_text='Введите необходимое количество ингредиента'
     )
@@ -160,6 +166,7 @@ class Dosage(models.Model):
 
 
 class ShoppingCart(RecipyToUserModel):
+    """Класс для представления рецептов в списке покупок пользователя."""
 
     class Meta:
         verbose_name = 'Список покупок'
@@ -170,6 +177,7 @@ class ShoppingCart(RecipyToUserModel):
 
 
 class Favorite(RecipyToUserModel):
+    """Класс для представления рецептов в списке избранного пользователя."""
 
     class Meta:
         verbose_name = 'Избранное'

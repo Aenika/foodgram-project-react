@@ -17,6 +17,7 @@ from users.models import Follow, User
 
 
 class Base64ImageField(serializers.ImageField):
+    """Сериализирует изображение формата base64."""
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')
@@ -27,18 +28,21 @@ class Base64ImageField(serializers.ImageField):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Теги"""
     class Meta:
-        fields = ('__all__')
+        fields = '__all__'
         model = Tag
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели ингредиенты."""
     class Meta:
-        fields = ('__all__')
+        fields = '__all__'
         model = Ingredient
 
 
 class UserRegistrationSerializer(UserCreateSerializer):
+    """Сериализатор для создания пользователя."""
     class Meta(UserCreateSerializer.Meta):
         fields = ['email', 'username', 'first_name', 'last_name', 'password']
 
@@ -58,15 +62,9 @@ class UserRegistrationSerializer(UserCreateSerializer):
         return data
 
 
-class RecipesShort(serializers.ModelSerializer):
-    image = Base64ImageField(read_only=True)
-
-    class Meta:
-        fields = ('id', 'name', 'image', 'cooking_time')
-        model = Recipy
-
 
 class CustomUserSerializer(UserSerializer):
+    """Сериализатор для отображения пользователя."""
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -89,7 +87,17 @@ class CustomUserSerializer(UserSerializer):
         ).exists()
 
 
+class RecipesShort(serializers.ModelSerializer):
+    """Сериализатор для краткого отображения рецепта, в модели пользователя-автора."""
+    image = Base64ImageField(read_only=True)
+
+    class Meta:
+        fields = ('id', 'name', 'image', 'cooking_time')
+        model = Recipy
+
+
 class UserRecipesSerializer(CustomUserSerializer):
+    """Сериализатор для отображения пользователя со списком его рецептов."""
     recipes = RecipesShort(read_only=True, many=True)
     recipes_count = serializers.SerializerMethodField()
 
@@ -111,6 +119,7 @@ class UserRecipesSerializer(CustomUserSerializer):
 
 
 class DosageSerializer(serializers.ModelSerializer):
+    """Сериализатор для отображения ингредиентов с дозировкой в рецепте."""
     id = serializers.ReadOnlyField(
         source='ingredient.id'
     )
@@ -125,6 +134,7 @@ class DosageSerializer(serializers.ModelSerializer):
 
 
 class RecipyGetSerializer(serializers.ModelSerializer):
+    """Сериализатор для отображения рецепта."""
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     image = Base64ImageField(read_only=True)
@@ -168,27 +178,8 @@ class RecipyGetSerializer(serializers.ModelSerializer):
         ).exists()
 
 
-class RecipyShortSerializer(RecipyGetSerializer):
-    author = serializers.SerializerMethodField()
-
-    class Meta:
-        fields = [
-            'image',
-            'name',
-            'tags',
-            'cooking_time',
-            'author',
-            'is_in_shopping_cart',
-            'is_favorited'
-        ]
-        model = Recipy
-
-    def get_author(self, obj):
-        author = obj.author
-        return author.get_full_name()
-
-
 class DosageCreateSerializer(serializers.ModelSerializer):
+    """Серализатор для создания ингредиента с дозировкой в рецепте."""
     id = serializers.IntegerField()
     amount = serializers.IntegerField()
 
@@ -198,6 +189,7 @@ class DosageCreateSerializer(serializers.ModelSerializer):
 
 
 def dosagecreation(dosagelist, recipy):
+    """Создает ингредиент с дозировкой в рецепте."""
     for ingredient in dosagelist:
         amount = ingredient['amount']
         id = ingredient['id']
@@ -212,6 +204,7 @@ def dosagecreation(dosagelist, recipy):
 
 
 class RecipySerializer(serializers.ModelSerializer):
+    """Сериализатор для создания и редактирования рецепта."""
     image = Base64ImageField(required=True, allow_null=False)
     tags = serializers.PrimaryKeyRelatedField(
         many=True, read_only=False, queryset=Tag.objects.all()

@@ -8,6 +8,7 @@ from core.constants import (ADMIN, CHARS_FOR_EMAIL, CHARS_FOR_FIRST_NAME,
                             CHARS_FOR_ROLE, CHARS_FOR_USERNAME, REG_USER)
 
 class CustomUserManager(UserManager):
+    """Класс для создания суперпользователя."""
     def create_superuser(self, username, email, password, **extra_fields):
         extra_fields.setdefault('role', ADMIN)
         extra_fields.setdefault('is_staff', True)
@@ -16,6 +17,7 @@ class CustomUserManager(UserManager):
 
 
 class User(AbstractUser):
+    """Класс для представления пользователей."""
     USER_TYPE_CHOICES = (
         (ADMIN, 'Admin'),
         (REG_USER, 'User')
@@ -23,7 +25,7 @@ class User(AbstractUser):
     role = models.CharField(choices=USER_TYPE_CHOICES,
                             max_length=CHARS_FOR_ROLE,
                             default=REG_USER,
-                            verbose_name='статус')
+                            verbose_name='Статус')
     email = models.EmailField(max_length=CHARS_FOR_EMAIL,
                               blank=False,
                               null=False,
@@ -55,8 +57,12 @@ class User(AbstractUser):
     def is_admin(self):
         return self.role == ADMIN
 
+    def __str__(self):
+        return self.username
+
 
 class Follow(models.Model):
+    """Класс для представления подписки пользователя на другого пользователя."""
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -78,6 +84,6 @@ class Follow(models.Model):
         verbose_name_plural = 'Подписки'
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "author"], name="unique_follow"
+                fields=['user', 'author'], name='unique_follow'
             )
         ]

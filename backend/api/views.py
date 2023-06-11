@@ -13,7 +13,7 @@ from recipes.models import (Dosage, Favorite, Ingredient, Recipy, ShoppingCart,
                             Tag)
 from users.models import Follow, User
 
-from .filters import RecipyByTagSlugFilter
+from .filters import RecipyFilter
 from .pagination import CustomPagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (IngredientSerializer, RecipesShort,
@@ -22,19 +22,29 @@ from .serializers import (IngredientSerializer, RecipesShort,
 
 
 class RecipyViewSet(viewsets.ModelViewSet):
-    queryset = Recipy.objects.all()
+    """
+    Вьюсет для класса рецептов. Возможные действия:
+    list: вывести список рецептов,
+    retrieve: вывести один рецепт,
+    update: изменить рецепт,
+    create: создать рецепт,
+    destroy: удалить рецепт.
+    """
+    queryset = Recipy.objects.select_related('author').all()
     permission_classes = (IsAuthorOrReadOnly,)
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend]
-    filterset_class = RecipyByTagSlugFilter
+    filterset_class = RecipyFilter
 
     def get_serializer_class(self):
+        """Выбирает необходимый сериалайзер для действия."""
         if self.action == 'list' or self.action == 'retrieve':
             return RecipyGetSerializer
         return RecipySerializer
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
+        """Создаёт новый рецепт и М2М поля ингредиенты, теги для него."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         response = super().create(request, *args, **kwargs)
@@ -43,6 +53,7 @@ class RecipyViewSet(viewsets.ModelViewSet):
         return Response(RecipyGetSerializer(recipy).data)
 
     def update(self, request, *args, **kwargs):
+        """Обновляет существующий рецепт и М2М поля ингредиенты, теги для него."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         response = super().update(request, *args, **kwargs)
@@ -50,22 +61,12 @@ class RecipyViewSet(viewsets.ModelViewSet):
         recipy = Recipy.objects.get(id=instance['id'])
         return Response(RecipyGetSerializer(recipy).data)
 
-    @action(detail=False, url_path='shopping_cart')
-    def shopping_cart(self, request):
-        user = request.user
-        recipes = Recipy.objects.filter(recipes_shoppingcarts__user=user)
-        serializer = RecipesShort(recipes, many=True)
-        return Response(serializer.data)
-
-    @action(detail=False, url_path='favorite')
-    def favorite(self, request):
-        user = request.user
-        recipes = Recipy.objects.filter(recipes_favorites__user=user)
-        serializer = RecipesShort(recipes, many=True)
-        return Response(serializer.data)
-
     @action(detail=False, url_path='download_shopping_cart')
     def download_shopping_cart(self, request):
+        """
+        Формирует скачиваемый pdf файл со списком ингредентов и дозировкой
+        для выбранных в "список покупок" рецептов.
+        """
         user = request.user
         ingredients = Dosage.objects.filter(
             recipy__recipes_shoppingcarts__user=user
@@ -94,13 +95,15 @@ class RecipyViewSet(viewsets.ModelViewSet):
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Tag.objects.all()
+    """Вьюсет для отображения списка и единично тегов."""
+    queryset = Tag.objects.prefetch_related('recipes').all()
     serializer_class = TagSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Ingredient.objects.all()
+    """Вьюсет для отображения спика и единично ингредиентовю"""
+    queryset = Ingredient.objects.prefetch_related('recipes').all()
     serializer_class = IngredientSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_backends = (filters.SearchFilter,)
@@ -110,6 +113,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class FollowViewSet(
     generics.ListAPIView
 ):
+    """Вьюсет для отображения списка подписок."""
     serializer_class = UserRecipesSerializer
     permission_classes = (permissions.IsAuthenticated,)
     pagination_class = CustomPagination
@@ -120,6 +124,11 @@ class FollowViewSet(
 
 
 class CreateDesroyFollowViewSet(APIView):
+    """
+    Вьюсет с двумя методами, создание и удаление.
+    create: добавляет выбранного автора в список подписок,
+    destroy: удаляет выбранный автора из списка подписок.
+    """
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request, id):
@@ -143,6 +152,11 @@ class CreateDesroyFollowViewSet(APIView):
 
 
 class CreateDesroyFavViewSet(APIView):
+    """
+    Вьюсет с двумя методами, создание и удаление.
+    create: добавляет выбранный рецепт в избранное,
+    destroy: удаляет выбранный рецепт из избранного.
+    """
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request, id):
@@ -164,6 +178,11 @@ class CreateDesroyFavViewSet(APIView):
 
 
 class CreateDesroyShopViewSet(APIView):
+    """
+    Вьюсет с двумя методами, создание и удаление.
+    create: добавляет выбранный рецепт в список покупок,
+    destroy: удаляет выбранный рецепт из списка покуок.
+    """
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request, id):

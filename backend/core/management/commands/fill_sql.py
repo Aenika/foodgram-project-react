@@ -8,7 +8,8 @@ from recipes.models import Ingredient
 
 
 class Command(BaseCommand):
-    help = 'Заполняет базу данных из подготовленных csv файлов'
+    """Заполняет базу данных данными из файла ingredients.csv"""
+    help = 'Заполняет базу данных из файла ingredients.csv'
 
     def handle(self, *args, **options):
         with open(

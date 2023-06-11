@@ -5,25 +5,31 @@ from .models import (Dosage, Favorite, Ingredient, Recipy, RecipyTags,
 
 
 class TagAdmin(admin.ModelAdmin):
+    """Класс для отображения тегов в админ зоне."""
     list_display = ('name', 'slug', 'color')
 
 
 class IngredientAdmin(admin.ModelAdmin):
+    """Класс для отображения ингредиентов в админ зоне."""
     list_display = ('name', 'measurement_unit')
     list_filter = ('name',)
     search_fields = ('name',)
 
 
 class TagInline(admin.TabularInline):
+    """Класс для отображения тегов в рецептах в админ зоне."""
     model = RecipyTags
 
 
 class IngredientInline(admin.StackedInline):
+    """Класс для отображения тегов в рецептах админ зоне."""
     model = Dosage
     fields = ('ingredient', 'amount')
 
 
 class RecipyAdmin(admin.ModelAdmin):
+    """Класс для отображения рецептов в админ зоне."""
+    model = Recipy
     list_display = ('name', 'author', 'text', 'cooking_time', 'fav_count')
     list_filter = ('name', 'author__username', 'tags__name')
     inlines = [
@@ -36,6 +42,7 @@ class RecipyAdmin(admin.ModelAdmin):
 
 
 class RecipyToUserAdmin(admin.ModelAdmin):
+    """Класс для отображения списков покупок и избранного в админ зоне."""
     list_display = ('user', 'recipy')
 
 
