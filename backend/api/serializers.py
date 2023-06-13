@@ -1,10 +1,15 @@
-# flake8: noqa: I001, I004
+# flake8: noqa: I001, I003, I004, I005
 import base64
+
 
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from rest_framework.validators import ValidationError
+from rest_framework.validators import (
+    UniqueTogetherValidator,
+    UniqueValidator,
+    ValidationError
+)
 
 from core.constants import (
     CHARS_FOR_RECIPY_NAME,
@@ -20,7 +25,8 @@ from recipes.models import (
     ShoppingCart,
     Tag
 )
-from users import serializers as users_serializers
+from users.serializers import CustomUserSerializer
+from .abstract_serializer import RecipyToUserSerializer
 
 
 class Base64ImageField(serializers.ImageField):
@@ -32,15 +38,6 @@ class Base64ImageField(serializers.ImageField):
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
 
         return super().to_internal_value(data)
-
-
-class RecipesShort(serializers.ModelSerializer):
-    """Сериализатор для краткого отображения рецепта, в модели пользователя-автора."""
-    image = Base64ImageField(read_only=True)
-
-    class Meta:
-        fields = ('id', 'name', 'image', 'cooking_time')
-        model = Recipy
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -83,7 +80,7 @@ class RecipyGetSerializer(serializers.ModelSerializer):
         many=True,
         source='recipyingredient'
     )
-    author = users_serializers.CustomUserSerializer(read_only=True, many=False)
+    author = CustomUserSerializer(read_only=True, many=False)
 
     class Meta:
         fields = [
@@ -129,27 +126,30 @@ class DosageCreateSerializer(serializers.ModelSerializer):
 
 def dosagecreation(dosagelist, recipy):
     """Создает ингредиент с дозировкой в рецепте."""
+    bulk_list = list()
     for ingredient in dosagelist:
         amount = ingredient['amount']
-        id = ingredient['id']
-        current_ingredient = get_object_or_404(
-            Ingredient, id=id
+        ingredient = get_object_or_404(
+            Ingredient, id=ingredient['id']
         )
-        Dosage.objects.create(
-            ingredient=current_ingredient,
-            amount=amount,
-            recipy=recipy
+        bulk_list.append(
+            Dosage(amount=amount, ingredient=ingredient, recipy=recipy)
         )
+    Dosage.objects.bulk_create(bulk_list)
 
 
 class RecipySerializer(serializers.ModelSerializer):
     """Сериализатор для создания и редактирования рецепта."""
     image = Base64ImageField(required=True, allow_null=False)
     tags = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=False, queryset=Tag.objects.all()
+        many=True,
+        read_only=False,
+        queryset=Tag.objects.all(),
+        validators=[UniqueValidator(queryset=RecipyTags.objects.all())]
     )
     ingredients = DosageCreateSerializer(
-        many=True, source='recipyingredient'
+        many=True,
+        source='recipyingredient'
     )
 
     class Meta:
@@ -178,14 +178,35 @@ class RecipySerializer(serializers.ModelSerializer):
                 'Слишком длинное название'
             )
         return data
+    
+    def validate_tags(self, value):
+        tag_list = []
+        for tag in value:
+            if tag.slug in tag_list:
+                raise serializers.ValidationError('Такой тег уже есть!')
+            tag_list.append(tag.slug)
+        if not value:
+            raise serializers.ValidationError('Нужен хотя бы один тег!')
+        return value
+
+    def validate_ingrediets(self, value):
+        ingredient_list = []
+        for ingredient in value:
+            if ingredient.id in ingredient_list:
+                raise serializers.ValidationError('Такой тингредиент уже есть!')
+            ingredient_list.append(ingredient.id)
+        if not value:
+            raise serializers.ValidationError('Нужен хотя бы один ингредиент!')
+        return value
 
     def create(self, validated_data):
         current_user = self.context['request'].user
         tags = validated_data.pop('tags')
         recipyingredients = validated_data.pop('recipyingredient')
         recipy = Recipy.objects.create(author=current_user, **validated_data)
-        for tag in tags:
-            RecipyTags.objects.create(tag=tag, recipy=recipy)
+        RecipyTags.objects.bulk_create(
+            [RecipyTags(tag=tag, recipy=recipy) for tag in tags]
+        )
         dosagecreation(recipyingredients, recipy)
         return recipy
 
@@ -200,8 +221,37 @@ class RecipySerializer(serializers.ModelSerializer):
         )
         instance.text = validated_data.get('text', instance.text)
         instance.image = validated_data.get('image', instance.image)
-        for tag in tags:
-            RecipyTags.objects.create(tag=tag, recipy=instance)
+        RecipyTags.objects.bulk_create(
+            [RecipyTags(tag=f"{tag}", recipy=instance) for tag in tags]
+        )
         dosagecreation(recipyingredients, instance)
         instance.save()
         return instance
+
+
+class FavoriteSerializer(RecipyToUserSerializer):
+    """Сериализатор для модели избранного."""
+
+    class Meta:
+        model = Favorite
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Favorite.objects.all(),
+                fields=['user', 'recipy'],
+                message='Рецепт уже в избранном!'
+            )
+        ]
+
+
+class ShoppingCartSerializer(RecipyToUserSerializer):
+    """Сериализатор для модели списка покупок."""
+
+    class Meta:
+        model = ShoppingCart
+        validators = [
+            UniqueTogetherValidator(
+                queryset=ShoppingCart.objects.all(),
+                fields=['user', 'recipy'],
+                message='Рецепт уже в списке покупок!'
+            )
+        ]

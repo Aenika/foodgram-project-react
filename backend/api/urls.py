@@ -16,7 +16,13 @@ router.register('recipes', RecipyViewSet, basename='recipes')
 router.register('tags', TagViewSet, basename='tags')
 
 urlpatterns = [
-    path('recipes/<int:id>/favorite/', CreateDesroyFavViewSet.as_view()),
-    path('recipes/<int:id>/shopping_cart/', CreateDesroyShopViewSet.as_view()),
+    path('recipes/<int:id>/favorite/', CreateDesroyFavViewSet.as_view({
+            'delete': 'destroy',
+            'post': 'create'
+        })),
+    path('recipes/<int:id>/shopping_cart/', CreateDesroyShopViewSet.as_view({
+            'delete': 'destroy',
+            'post': 'create'
+        })),
     path('', include(router.urls)),
 ]

@@ -1,7 +1,15 @@
+# flake8: noqa: I001, I005
 from django.contrib import admin
 
-from .models import (Dosage, Favorite, Ingredient, Recipy, RecipyTags,
-                     ShoppingCart, Tag)
+from .models import (
+    Dosage,
+    Favorite,
+    Ingredient,
+    Recipy,
+    RecipyTags,
+    ShoppingCart,
+    Tag
+)
 
 
 class TagAdmin(admin.ModelAdmin):
