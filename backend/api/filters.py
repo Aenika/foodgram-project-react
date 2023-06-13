@@ -23,13 +23,13 @@ class RecipyFilter(django_filters.FilterSet):
         if not value:
             return queryset
         user = self.request.user
-        return Recipy.objects.filter(recipes_shoppingcarts__user=user)
+        return queryset.filter(recipes_shoppingcarts__user=user)
 
     def get_favorited(self, queryset, name, value):
         if not value:
             return queryset
         user = self.request.user
-        return Recipy.objects.filter(recipes_favorites__user=user)
+        return queryset.filter(recipes_favorites__user=user)
 
     class Meta:
         model = Recipy

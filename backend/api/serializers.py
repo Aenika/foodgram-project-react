@@ -1,19 +1,32 @@
-# flake8: noqa: I001, I004
+# flake8: noqa: I001, I003, I004, I005
 import base64
+
 
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
-from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
-from rest_framework.validators import ValidationError
+from rest_framework.validators import (
+    UniqueTogetherValidator,
+    UniqueValidator,
+    ValidationError
+)
 
-from core.constants import (CHARS_FOR_EMAIL, CHARS_FOR_FIRST_NAME,
-                            CHARS_FOR_LAST_NAME, CHARS_FOR_PASSWORD,
-                            CHARS_FOR_RECIPY_NAME, CHARS_FOR_USERNAME,
-                            MAX_COOKING_TIME, MIN_COOKING_TIME)
-from recipes.models import (Dosage, Favorite, Ingredient, Recipy, RecipyTags,
-                            ShoppingCart, Tag)
-from users.models import Follow, User
+from core.constants import (
+    CHARS_FOR_RECIPY_NAME,
+    MAX_COOKING_TIME,
+    MIN_COOKING_TIME
+)
+from recipes.models import (
+    Dosage,
+    Favorite,
+    Ingredient,
+    Recipy,
+    RecipyTags,
+    ShoppingCart,
+    Tag
+)
+from users.serializers import CustomUserSerializer
+from .abstract_serializer import RecipyToUserSerializer
 
 
 class Base64ImageField(serializers.ImageField):
@@ -39,83 +52,6 @@ class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Ingredient
-
-
-class UserRegistrationSerializer(UserCreateSerializer):
-    """Сериализатор для создания пользователя."""
-    class Meta(UserCreateSerializer.Meta):
-        fields = ['email', 'username', 'first_name', 'last_name', 'password']
-
-    def validate(self, data):
-        fields = {
-            'email': CHARS_FOR_EMAIL,
-            'username': CHARS_FOR_USERNAME,
-            'first_name': CHARS_FOR_FIRST_NAME,
-            'last_name': CHARS_FOR_LAST_NAME,
-            'password': CHARS_FOR_PASSWORD
-        }
-        for key, value in fields.items():
-            if len(data[key]) > value:
-                raise serializers.ValidationError(
-                    f'Это поле должно быть не более {value} символов!'
-                )
-        return data
-
-
-
-class CustomUserSerializer(UserSerializer):
-    """Сериализатор для отображения пользователя."""
-    is_subscribed = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-        )
-
-    def get_is_subscribed(self, obj):
-        request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
-            return False
-        return Follow.objects.filter(
-            user=request.user, author=obj
-        ).exists()
-
-
-class RecipesShort(serializers.ModelSerializer):
-    """Сериализатор для краткого отображения рецепта, в модели пользователя-автора."""
-    image = Base64ImageField(read_only=True)
-
-    class Meta:
-        fields = ('id', 'name', 'image', 'cooking_time')
-        model = Recipy
-
-
-class UserRecipesSerializer(CustomUserSerializer):
-    """Сериализатор для отображения пользователя со списком его рецептов."""
-    recipes = RecipesShort(read_only=True, many=True)
-    recipes_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-            'recipes',
-            'recipes_count'
-        )
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
 
 
 class DosageSerializer(serializers.ModelSerializer):
@@ -163,17 +99,17 @@ class RecipyGetSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
+        if request is None:
             return False
-        return Favorite.objects.filter(
+        return request.user.is_authenticated and Favorite.objects.filter(
             user=request.user, recipy=obj
         ).exists()
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
+        if request is None:
             return False
-        return ShoppingCart.objects.filter(
+        return request.user.is_authenticated and ShoppingCart.objects.filter(
             user=request.user, recipy=obj
         ).exists()
 
@@ -190,27 +126,30 @@ class DosageCreateSerializer(serializers.ModelSerializer):
 
 def dosagecreation(dosagelist, recipy):
     """Создает ингредиент с дозировкой в рецепте."""
+    bulk_list = list()
     for ingredient in dosagelist:
         amount = ingredient['amount']
-        id = ingredient['id']
-        current_ingredient = get_object_or_404(
-            Ingredient, id=id
+        ingredient = get_object_or_404(
+            Ingredient, id=ingredient['id']
         )
-        Dosage.objects.create(
-            ingredient=current_ingredient,
-            amount=amount,
-            recipy=recipy
+        bulk_list.append(
+            Dosage(amount=amount, ingredient=ingredient, recipy=recipy)
         )
+    Dosage.objects.bulk_create(bulk_list)
 
 
 class RecipySerializer(serializers.ModelSerializer):
     """Сериализатор для создания и редактирования рецепта."""
     image = Base64ImageField(required=True, allow_null=False)
     tags = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=False, queryset=Tag.objects.all()
+        many=True,
+        read_only=False,
+        queryset=Tag.objects.all(),
+        validators=[UniqueValidator(queryset=RecipyTags.objects.all())]
     )
     ingredients = DosageCreateSerializer(
-        many=True, source='recipyingredient'
+        many=True,
+        source='recipyingredient'
     )
 
     class Meta:
@@ -239,14 +178,35 @@ class RecipySerializer(serializers.ModelSerializer):
                 'Слишком длинное название'
             )
         return data
+    
+    def validate_tags(self, value):
+        tag_list = []
+        for tag in value:
+            if tag.slug in tag_list:
+                raise serializers.ValidationError('Такой тег уже есть!')
+            tag_list.append(tag.slug)
+        if not value:
+            raise serializers.ValidationError('Нужен хотя бы один тег!')
+        return value
+
+    def validate_ingrediets(self, value):
+        ingredient_list = []
+        for ingredient in value:
+            if ingredient.id in ingredient_list:
+                raise serializers.ValidationError('Такой тингредиент уже есть!')
+            ingredient_list.append(ingredient.id)
+        if not value:
+            raise serializers.ValidationError('Нужен хотя бы один ингредиент!')
+        return value
 
     def create(self, validated_data):
         current_user = self.context['request'].user
         tags = validated_data.pop('tags')
         recipyingredients = validated_data.pop('recipyingredient')
         recipy = Recipy.objects.create(author=current_user, **validated_data)
-        for tag in tags:
-            RecipyTags.objects.create(tag=tag, recipy=recipy)
+        RecipyTags.objects.bulk_create(
+            [RecipyTags(tag=tag, recipy=recipy) for tag in tags]
+        )
         dosagecreation(recipyingredients, recipy)
         return recipy
 
@@ -261,8 +221,37 @@ class RecipySerializer(serializers.ModelSerializer):
         )
         instance.text = validated_data.get('text', instance.text)
         instance.image = validated_data.get('image', instance.image)
-        for tag in tags:
-            RecipyTags.objects.create(tag=tag, recipy=instance)
+        RecipyTags.objects.bulk_create(
+            [RecipyTags(tag=f"{tag}", recipy=instance) for tag in tags]
+        )
         dosagecreation(recipyingredients, instance)
         instance.save()
         return instance
+
+
+class FavoriteSerializer(RecipyToUserSerializer):
+    """Сериализатор для модели избранного."""
+
+    class Meta:
+        model = Favorite
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Favorite.objects.all(),
+                fields=['user', 'recipy'],
+                message='Рецепт уже в избранном!'
+            )
+        ]
+
+
+class ShoppingCartSerializer(RecipyToUserSerializer):
+    """Сериализатор для модели списка покупок."""
+
+    class Meta:
+        model = ShoppingCart
+        validators = [
+            UniqueTogetherValidator(
+                queryset=ShoppingCart.objects.all(),
+                fields=['user', 'recipy'],
+                message='Рецепт уже в списке покупок!'
+            )
+        ]

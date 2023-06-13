@@ -1,24 +1,33 @@
 # flake8: noqa: I001, I004
 from django.db import transaction
-from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, generics, permissions, status, viewsets
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from recipes.models import (Dosage, Favorite, Ingredient, Recipy, ShoppingCart,
-                            Tag)
-from users.models import Follow, User
-
+from core.pagination import CustomPagination
+from core.serializer_recipy import RecipesShort
+from core.viewsets import CreateDestroyViewSet
+from recipes.models import (
+    Favorite,
+    Ingredient,
+    Recipy,
+    ShoppingCart,
+    Tag
+)
 from .filters import RecipyFilter
-from .pagination import CustomPagination
 from .permissions import IsAuthorOrReadOnly
-from .serializers import (IngredientSerializer, RecipesShort,
-                          RecipyGetSerializer, RecipySerializer, TagSerializer,
-                          UserRecipesSerializer)
+from .serializers import (
+    FavoriteSerializer,
+    IngredientSerializer,
+    RecipyGetSerializer,
+    RecipySerializer,
+    ShoppingCartSerializer,
+    TagSerializer
+)
+from .service import create_content
 
 
 class RecipyViewSet(viewsets.ModelViewSet):
@@ -68,22 +77,7 @@ class RecipyViewSet(viewsets.ModelViewSet):
         для выбранных в "список покупок" рецептов.
         """
         user = request.user
-        ingredients = Dosage.objects.filter(
-            recipy__recipes_shoppingcarts__user=user
-        ).values('ingredient').annotate(sum_amount=Sum('amount'))
-        content = 'Необходимо купить: \n'
-        for i in ingredients:
-            ingredient = get_object_or_404(Ingredient, id=i['ingredient'])
-            amount = i['sum_amount']
-            content += (
-                f'- {ingredient.name}'
-                f' ({ingredient.measurement_unit})'
-                f' — {amount};\n'
-            )
-        content += (
-            '\n Спасибо, что воспользовались приложением от Вики'
-            '\n https://github.com/Aenika'
-        )
+        content = create_content(user)
         headers = {
             'Content-Type': 'application/pdf',
             'Content-Disposition': 'attachment; filename="shopping_cart.pdf"',
@@ -110,94 +104,51 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ('^name',)
 
 
-class FollowViewSet(
-    generics.ListAPIView
-):
-    """Вьюсет для отображения списка подписок."""
-    serializer_class = UserRecipesSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-    pagination_class = CustomPagination
-
-    def get_queryset(self):
-        current_user = self.request.user
-        return User.objects.filter(follower__user=current_user)
-
-
-class CreateDesroyFollowViewSet(APIView):
-    """
-    Вьюсет с двумя методами, создание и удаление.
-    create: добавляет выбранного автора в список подписок,
-    destroy: удаляет выбранный автора из списка подписок.
-    """
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def post(self, request, id):
-        user = request.user
-        author = get_object_or_404(User, id=id)
-        if user == author:
-            return HttpResponse(400, 'На себя нельзя подписываться')
-        if Follow.objects.filter(user=user, author=author).exists():
-            return HttpResponse(400, 'Подписка уже существует')
-        Follow.objects.create(user=user, author=author)
-        return Response(UserRecipesSerializer(author).data)
-
-    def delete(self, request, id):
-        author = get_object_or_404(User, id=id)
-        user = request.user
-        follow = get_object_or_404(
-            Follow, user=user, author=author
-        )
-        follow.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class CreateDesroyFavViewSet(APIView):
+class CreateDesroyFavViewSet(CreateDestroyViewSet):
     """
     Вьюсет с двумя методами, создание и удаление.
     create: добавляет выбранный рецепт в избранное,
     destroy: удаляет выбранный рецепт из избранного.
     """
     permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = FavoriteSerializer
 
-    def post(self, request, id):
+    def create(self, request, id):
         user = request.user
         recipy = get_object_or_404(Recipy, id=id)
-        if Favorite.objects.filter(user=user, recipy=recipy).exists():
-            return HttpResponse(400, 'Уже в списке избранного')
         Favorite.objects.create(user=user, recipy=recipy)
         return Response(RecipesShort(recipy).data)
 
-    def delete(self, request, id):
+    def destroy(self, request, id):
         recipy = get_object_or_404(Recipy, id=id)
         user = request.user
-        favorited = get_object_or_404(
+        favorite = get_object_or_404(
             Favorite, user=user, recipy=recipy
         )
-        favorited.delete()
+        favorite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class CreateDesroyShopViewSet(APIView):
+class CreateDesroyShopViewSet(CreateDestroyViewSet):
     """
     Вьюсет с двумя методами, создание и удаление.
     create: добавляет выбранный рецепт в список покупок,
     destroy: удаляет выбранный рецепт из списка покуок.
     """
     permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = ShoppingCartSerializer
 
-    def post(self, request, id):
+    def create(self, request, id):
         user = request.user
         recipy = get_object_or_404(Recipy, id=id)
-        if ShoppingCart.objects.filter(user=user, recipy=recipy).exists():
-            return HttpResponse(400, 'Уже в списке избранного')
         ShoppingCart.objects.create(user=user, recipy=recipy)
         return Response(RecipesShort(recipy).data)
 
-    def delete(self, request, id):
+    def destroy(self, request, id):
         recipy = get_object_or_404(Recipy, id=id)
         user = request.user
-        in_cart = get_object_or_404(
+        shopping_cart = get_object_or_404(
             ShoppingCart, user=user, recipy=recipy
         )
-        in_cart.delete()
+        shopping_cart.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
