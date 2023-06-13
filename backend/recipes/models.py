@@ -1,13 +1,26 @@
 # flake8: noqa: I001, I004
-from django.core.validators import (MaxValueValidator, MinValueValidator,
-                                    RegexValidator)
+
+from django.core.validators import (
+    MaxValueValidator,
+    MinValueValidator,
+    RegexValidator
+)
 from django.db import models
 
-from core.constants import (CHARS_FOR_INGREDIENT_NAME, CHARS_FOR_RECIPY_NAME,
-                            CHARS_FOR_TAG_NAME, CHARS_FOR_TAG_SLUG,
-                            MAX_COOKING_TIME, MIN_COOKING_TIME)
-from core.models import RecipyToUserModel
+
+from core.constants import (
+    CHARS_FOR_RECIPY_NAME,
+    MAX_COOKING_TIME,
+    MIN_COOKING_TIME
+)
 from users.models import User
+from .abstract_models import RecipyToUserModel
+from .constants import (
+    CHARS_FOR_INGREDIENT_NAME,
+    CHARS_FOR_MEASURE,
+    CHARS_FOR_TAG_NAME,
+    CHARS_FOR_TAG_SLUG
+)
 
 
 class Ingredient(models.Model):
@@ -18,7 +31,7 @@ class Ingredient(models.Model):
         unique=False,
     )
     measurement_unit: str = models.CharField(
-        max_length=200,
+        max_length=CHARS_FOR_MEASURE,
         verbose_name='Единицы измерения',
         unique=False
     )
@@ -50,7 +63,7 @@ class Tag(models.Model):
         default='#ffffff',
         verbose_name='Цвет тега',
         validators=[
-            RegexValidator(regex=r'^\#[\w]{6}$')
+            RegexValidator(regex=r'^\#[\w]{6}$'),
         ]
     )
     slug: str = models.SlugField(
@@ -61,6 +74,11 @@ class Tag(models.Model):
         ordering = ('name',)
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'color'], name='unique_Tag'
+            )
+        ]
 
     def __str__(self):
         return self.name
@@ -171,6 +189,11 @@ class ShoppingCart(RecipyToUserModel):
     class Meta:
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "recipy"], name="unique_in_shopping_cart"
+            )
+        ]
 
     def __str___(self):
         return f'{self.user} добавил в покупки рецепт {self.recipy}'
@@ -182,6 +205,11 @@ class Favorite(RecipyToUserModel):
     class Meta:
         verbose_name = 'Избранное'
         verbose_name_plural = verbose_name
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "recipy"], name="unique_favorite"
+            )
+        ]
 
     def __str___(self):
         return f'{self.user} добавил в избранное рецепт {self.recipy}'

@@ -12,13 +12,12 @@ from rest_framework.views import APIView
 from recipes.models import (Dosage, Favorite, Ingredient, Recipy, ShoppingCart,
                             Tag)
 from users.models import Follow, User
-
-from .filters import RecipyFilter
-from .pagination import CustomPagination
-from .permissions import IsAuthorOrReadOnly
-from .serializers import (IngredientSerializer, RecipesShort,
-                          RecipyGetSerializer, RecipySerializer, TagSerializer,
-                          UserRecipesSerializer)
+from users.serializers import UserRecipesSerializer
+from api.filters import RecipyFilter
+from core.pagination import CustomPagination
+from api.permissions import IsAuthorOrReadOnly
+from api.serializers import (IngredientSerializer, RecipesShort,
+                          RecipyGetSerializer, RecipySerializer, TagSerializer)
 
 
 class RecipyViewSet(viewsets.ModelViewSet):

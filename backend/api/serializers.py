@@ -3,17 +3,24 @@ import base64
 
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
-from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.validators import ValidationError
 
-from core.constants import (CHARS_FOR_EMAIL, CHARS_FOR_FIRST_NAME,
-                            CHARS_FOR_LAST_NAME, CHARS_FOR_PASSWORD,
-                            CHARS_FOR_RECIPY_NAME, CHARS_FOR_USERNAME,
-                            MAX_COOKING_TIME, MIN_COOKING_TIME)
-from recipes.models import (Dosage, Favorite, Ingredient, Recipy, RecipyTags,
-                            ShoppingCart, Tag)
-from users.models import Follow, User
+from core.constants import (
+    CHARS_FOR_RECIPY_NAME,
+    MAX_COOKING_TIME,
+    MIN_COOKING_TIME
+)
+from recipes.models import (
+    Dosage,
+    Favorite,
+    Ingredient,
+    Recipy,
+    RecipyTags,
+    ShoppingCart,
+    Tag
+)
+from users import serializers as users_serializers
 
 
 class Base64ImageField(serializers.ImageField):
@@ -25,6 +32,15 @@ class Base64ImageField(serializers.ImageField):
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
 
         return super().to_internal_value(data)
+
+
+class RecipesShort(serializers.ModelSerializer):
+    """Сериализатор для краткого отображения рецепта, в модели пользователя-автора."""
+    image = Base64ImageField(read_only=True)
+
+    class Meta:
+        fields = ('id', 'name', 'image', 'cooking_time')
+        model = Recipy
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -39,83 +55,6 @@ class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Ingredient
-
-
-class UserRegistrationSerializer(UserCreateSerializer):
-    """Сериализатор для создания пользователя."""
-    class Meta(UserCreateSerializer.Meta):
-        fields = ['email', 'username', 'first_name', 'last_name', 'password']
-
-    def validate(self, data):
-        fields = {
-            'email': CHARS_FOR_EMAIL,
-            'username': CHARS_FOR_USERNAME,
-            'first_name': CHARS_FOR_FIRST_NAME,
-            'last_name': CHARS_FOR_LAST_NAME,
-            'password': CHARS_FOR_PASSWORD
-        }
-        for key, value in fields.items():
-            if len(data[key]) > value:
-                raise serializers.ValidationError(
-                    f'Это поле должно быть не более {value} символов!'
-                )
-        return data
-
-
-
-class CustomUserSerializer(UserSerializer):
-    """Сериализатор для отображения пользователя."""
-    is_subscribed = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-        )
-
-    def get_is_subscribed(self, obj):
-        request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
-            return False
-        return Follow.objects.filter(
-            user=request.user, author=obj
-        ).exists()
-
-
-class RecipesShort(serializers.ModelSerializer):
-    """Сериализатор для краткого отображения рецепта, в модели пользователя-автора."""
-    image = Base64ImageField(read_only=True)
-
-    class Meta:
-        fields = ('id', 'name', 'image', 'cooking_time')
-        model = Recipy
-
-
-class UserRecipesSerializer(CustomUserSerializer):
-    """Сериализатор для отображения пользователя со списком его рецептов."""
-    recipes = RecipesShort(read_only=True, many=True)
-    recipes_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-            'recipes',
-            'recipes_count'
-        )
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
 
 
 class DosageSerializer(serializers.ModelSerializer):
@@ -144,7 +83,7 @@ class RecipyGetSerializer(serializers.ModelSerializer):
         many=True,
         source='recipyingredient'
     )
-    author = CustomUserSerializer(read_only=True, many=False)
+    author = users_serializers.CustomUserSerializer(read_only=True, many=False)
 
     class Meta:
         fields = [
@@ -163,17 +102,17 @@ class RecipyGetSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
+        if request is None:
             return False
-        return Favorite.objects.filter(
+        return request.user.is_authenticated and Favorite.objects.filter(
             user=request.user, recipy=obj
         ).exists()
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
+        if request is None:
             return False
-        return ShoppingCart.objects.filter(
+        return request.user.is_authenticated and ShoppingCart.objects.filter(
             user=request.user, recipy=obj
         ).exists()
 

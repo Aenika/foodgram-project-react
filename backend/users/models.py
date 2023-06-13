@@ -3,9 +3,17 @@ from django.contrib.auth.models import AbstractUser, UserManager
 from django.core.validators import RegexValidator
 from django.db import models
 
-from core.constants import (ADMIN, CHARS_FOR_EMAIL, CHARS_FOR_FIRST_NAME,
-                            CHARS_FOR_LAST_NAME, CHARS_FOR_PASSWORD,
-                            CHARS_FOR_ROLE, CHARS_FOR_USERNAME, REG_USER)
+from .constants import (
+    ADMIN,
+    CHARS_FOR_EMAIL,
+    CHARS_FOR_FIRST_NAME,
+    CHARS_FOR_LAST_NAME,
+    CHARS_FOR_PASSWORD,
+    CHARS_FOR_ROLE,
+    CHARS_FOR_USERNAME,
+    REG_USER
+)
+
 
 class CustomUserManager(UserManager):
     """Класс для создания суперпользователя."""
@@ -55,14 +63,16 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == ADMIN
+        return self.role == ADMIN or self.is_superuser or self.is_staff
 
     def __str__(self):
         return self.username
 
 
 class Follow(models.Model):
-    """Класс для представления подписки пользователя на другого пользователя."""
+    """
+    Класс для представления подписки пользователя на другого пользователя.
+    """
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -76,9 +86,6 @@ class Follow(models.Model):
         verbose_name='Подписки',
     )
 
-    def __str__(self):
-        return f'Пользователь {self.user} подписан на автора {self.author}.'
-
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
@@ -87,3 +94,6 @@ class Follow(models.Model):
                 fields=['user', 'author'], name='unique_follow'
             )
         ]
+
+    def __str__(self):
+        return f'Пользователь {self.user} подписан на автора {self.author}.'

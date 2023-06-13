@@ -38,7 +38,8 @@ class RecipyAdmin(admin.ModelAdmin):
     ]
 
     def fav_count(self, obj):
-        Favorite.objects.filter(recipy=obj).count()
+        return Favorite.objects.filter(recipy=obj).count()
+    fav_count.short_description = 'Количество добавлений в избранное'
 
 
 class RecipyToUserAdmin(admin.ModelAdmin):

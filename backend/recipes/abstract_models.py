@@ -28,3 +28,6 @@ class RecipyToUserModel(models.Model):
                 fields=["user", "recipy"], name="unique_pair"
             )
         ]
+
+    def __str___(self):
+        return f'{self.user} добавил {self.recipy}'

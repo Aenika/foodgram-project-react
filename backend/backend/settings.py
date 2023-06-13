@@ -1,11 +1,14 @@
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-SECRET_KEY = 'jbpau=g5i0v%4$q9b$qdc*bw@zej26g&p740)%+22t$)&i-*&p'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-
-DEBUG = True
+DEBUG = os.getenv('DEBUG')
 
 
 ALLOWED_HOSTS = [
@@ -126,9 +129,9 @@ DJOSER = {
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
     'SERIALIZERS': {
-        'user_create': 'api.serializers.UserRegistrationSerializer',
-        'user': 'api.serializers.CustomUserSerializer',
-        'current_user': 'api.serializers.CustomUserSerializer',
+        'user_create': 'users.serializers.UserRegistrationSerializer',
+        'user': 'users.serializers.CustomUserSerializer',
+        'current_user': 'users.serializers.CustomUserSerializer',
     },
 }
 
