@@ -17,7 +17,7 @@ from .models import Follow, User
 class UserRegistrationSerializer(UserCreateSerializer):
     """Сериализатор для создания пользователя."""
     class Meta(UserCreateSerializer.Meta):
-        fields = ['email', 'username', 'first_name', 'last_name', 'password']
+        fields = ('email', 'username', 'first_name', 'last_name', 'password')
 
     def validate(self, data):
         fields = {

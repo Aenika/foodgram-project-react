@@ -16,6 +16,7 @@ from core.constants import (
     MAX_COOKING_TIME,
     MIN_COOKING_TIME
 )
+from core.serializer_recipy import Base64ImageField
 from recipes.models import (
     Dosage,
     Favorite,
@@ -27,17 +28,6 @@ from recipes.models import (
 )
 from users.serializers import CustomUserSerializer
 from .abstract_serializer import RecipyToUserSerializer
-
-
-class Base64ImageField(serializers.ImageField):
-    """Сериализирует изображение формата base64."""
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-
-        return super().to_internal_value(data)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -193,10 +183,15 @@ class RecipySerializer(serializers.ModelSerializer):
         ingredient_list = []
         for ingredient in value:
             if ingredient.id in ingredient_list:
-                raise serializers.ValidationError('Такой тингредиент уже есть!')
+                raise serializers.ValidationError('Такой ингредиент уже есть!')
+            if ingredient['amount'] <= 0:
+                raise serializers.ValidationError(
+                    'Количество ингредиента должно быть больше нуля!'
+                )
             ingredient_list.append(ingredient.id)
         if not value:
             raise serializers.ValidationError('Нужен хотя бы один ингредиент!')
+        
         return value
 
     def create(self, validated_data):

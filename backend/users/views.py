@@ -9,9 +9,7 @@ from .models import Follow, User
 from .serializers import FollowSerializer, UserRecipesSerializer
 
 
-class FollowViewSet(
-    generics.ListAPIView
-):
+class FollowViewSet(generics.ListAPIView):
     """Вьюсет для отображения списка подписок."""
     serializer_class = UserRecipesSerializer
     permission_classes = (permissions.IsAuthenticated,)
