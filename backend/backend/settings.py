@@ -12,8 +12,13 @@ DEBUG = os.getenv('DEBUG', default=False)
 
 
 ALLOWED_HOSTS = [
+    '*',
     'localhost',
     '127.0.0.1',
+    '[::1]',
+    'web',
+    'web:8000',
+    'testserver'
 ]
 
 
@@ -58,10 +63,10 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', default='foodgram'),
+        'NAME': os.getenv('DB_NAME', default='postgres'),
         'USER': os.getenv('POSTGRES_USER', default='foodgram_user'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', default='xxxyyyzzz'),
-        'HOST': os.getenv('DB_HOST', default='127.0.0.1'),
+        'HOST': os.getenv('DB_HOST', default='db'),
         'PORT': os.getenv('DB_PORT', default='5432')
     }
 }
@@ -93,10 +98,9 @@ USE_L10N = True
 
 USE_TZ = True
 
-
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-
 STATIC_URL = '/static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
