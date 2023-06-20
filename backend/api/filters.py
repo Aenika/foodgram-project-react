@@ -1,4 +1,3 @@
-# flake8: noqa: I001, I004
 import django_filters
 
 from recipes.models import Ingredient, Recipy

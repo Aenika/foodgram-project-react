@@ -1,4 +1,3 @@
-# flake8: noqa: I001, I005
 from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
@@ -17,12 +16,12 @@ v1_router.register('recipes', RecipyViewSet)
 
 urlpatterns = [
     path('recipes/<int:id>/favorite/', CreateDesroyFavViewSet.as_view({
-            'delete': 'destroy',
-            'post': 'create'
-        })),
+        'delete': 'destroy',
+        'post': 'create'
+    })),
     path('recipes/<int:id>/shopping_cart/', CreateDesroyShopViewSet.as_view({
-            'delete': 'destroy',
-            'post': 'create'
-        })),
+        'delete': 'destroy',
+        'post': 'create'
+    })),
     path('', include(v1_router.urls)),
 ]

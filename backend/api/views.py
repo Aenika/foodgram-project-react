@@ -1,4 +1,3 @@
-# flake8: noqa: I001, I004
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -41,7 +40,7 @@ class RecipyViewSet(viewsets.ModelViewSet):
     queryset = Recipy.objects.select_related('author').all()
     permission_classes = (IsAuthorOrReadOnly,)
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend,]
+    filter_backends = [DjangoFilterBackend, ]
     filterset_class = RecipyFilter
     serializer_class = RecipyGetSerializer
 
@@ -62,7 +61,10 @@ class RecipyViewSet(viewsets.ModelViewSet):
         return Response(RecipyGetSerializer(recipy).data)
 
     def update(self, request, *args, **kwargs):
-        """Обновляет существующий рецепт и М2М поля ингредиенты, теги для него."""
+        """
+        Обновляет существующий рецепт и М2М поля
+        ингредиенты, теги для него.
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         response = super().update(request, *args, **kwargs)
@@ -101,7 +103,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     pagination_class = None
     serializer_class = IngredientSerializer
-    filter_backends = [DjangoFilterBackend,]
+    filter_backends = [DjangoFilterBackend, ]
     filterset_class = IngredientFilter
     permission_classes = (permissions.AllowAny,)
 

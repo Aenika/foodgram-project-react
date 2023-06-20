@@ -1,4 +1,3 @@
-# flake8: noqa: I001, I004
 from django.contrib import admin
 
 from recipes.models import Recipy

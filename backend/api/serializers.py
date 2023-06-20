@@ -1,4 +1,3 @@
-# flake8: noqa: I001, I003, I004, I005
 from rest_framework import serializers
 from rest_framework.validators import (
     UniqueTogetherValidator,
@@ -162,7 +161,7 @@ class RecipySerializer(serializers.ModelSerializer):
                 'Слишком длинное название'
             )
         return data
-    
+
     def validate_tags(self, value):
         tag_list = []
         for tag in value:
@@ -185,7 +184,7 @@ class RecipySerializer(serializers.ModelSerializer):
             ingredient_list.append(ingredient.id)
         if not value:
             raise serializers.ValidationError('Нужен хотя бы один ингредиент!')
-        
+
         return value
 
     def create(self, validated_data):

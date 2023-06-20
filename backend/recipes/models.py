@@ -1,5 +1,3 @@
-# flake8: noqa: I001, I004
-
 from django.core.validators import (
     MaxValueValidator,
     MinValueValidator,
@@ -143,7 +141,9 @@ class Recipy(models.Model):
 
 class RecipyTags(models.Model):
     """Класс для промежуточной связи полей многие-ко-многим рецепты-теги."""
-    recipy = models.ForeignKey(Recipy, on_delete=models.CASCADE, verbose_name="Рецепт")
+    recipy = models.ForeignKey(
+        Recipy, on_delete=models.CASCADE, verbose_name="Рецепт"
+    )
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE, verbose_name="Тег")
 
     class Meta:
@@ -155,7 +155,10 @@ class RecipyTags(models.Model):
 
 
 class Dosage(models.Model):
-    """Класс для связи полей многие-ко-многим рецепты-ингредиенты, добавляет поле количество."""
+    """
+    Класс для связи полей многие-ко-многим
+    рецепты-ингредиенты, добавляет поле количество.
+    """
     recipy = models.ForeignKey(
         Recipy,
         on_delete=models.CASCADE,

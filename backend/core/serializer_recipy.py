@@ -1,4 +1,3 @@
-# flake8: noqa: I001, I004
 import base64
 
 from django.core.files.base import ContentFile
@@ -20,7 +19,8 @@ class Base64ImageField(serializers.ImageField):
 
 class RecipesShort(serializers.ModelSerializer):
     """
-    Сериализатор для краткого отображения рецепта, в модели пользователя-автора.
+    Сериализатор для краткого отображения рецепта,
+    в модели пользователя-автора.
     Вынесен в приложение core для избежания кругового импорта,
     который вызывает ошибки.
     """

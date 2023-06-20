@@ -1,4 +1,3 @@
-# flake8: noqa: I001, I004
 from rest_framework import serializers
 
 from recipes.abstract_models import RecipyToUserModel
