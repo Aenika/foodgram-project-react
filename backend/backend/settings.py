@@ -18,7 +18,9 @@ ALLOWED_HOSTS = [
     '[::1]',
     'web',
     'web:8000',
-    'testserver'
+    'web:5000',
+    'testserver',
+    '51.250.70.114'
 ]
 
 
