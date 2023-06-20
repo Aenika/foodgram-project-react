@@ -60,11 +60,11 @@ jobs:
         username: ${{ secrets.USER }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          sudo docker pull aennika/foodgram-backend:latest
-          sudo docker pull aennika/foodgram-frontend:latest
           sudo docker compose down -v
           sudo docker image prune
           sudo docker system prune
+          sudo docker pull aennika/foodgram-backend:latest
+          sudo docker pull aennika/foodgram-frontend:latest
           rm .env
           touch .env
           echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
