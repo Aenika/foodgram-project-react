@@ -3,7 +3,7 @@ from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, permissions, status, viewsets
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -17,7 +17,7 @@ from recipes.models import (
     ShoppingCart,
     Tag
 )
-from .filters import RecipyFilter
+from .filters import IngredientFilter, RecipyFilter
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
     FavoriteSerializer,
@@ -42,8 +42,9 @@ class RecipyViewSet(viewsets.ModelViewSet):
     queryset = Recipy.objects.select_related('author').all()
     permission_classes = (IsAuthorOrReadOnly,)
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend,]
     filterset_class = RecipyFilter
+    serializer_class = RecipyGetSerializer
 
     def get_serializer_class(self):
         """Выбирает необходимый сериалайзер для действия."""
@@ -90,18 +91,20 @@ class RecipyViewSet(viewsets.ModelViewSet):
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     """Вьюсет для отображения списка и единично тегов."""
-    queryset = Tag.objects.prefetch_related('recipes').all()
+    queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    pagination_class = None
+    permission_classes = (permissions.AllowAny,)
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    """Вьюсет для отображения спика и единично ингредиентовю"""
-    queryset = Ingredient.objects.prefetch_related('recipes').all()
+    """Вьюсет для отображения спика и единично ингредиентов."""
+    queryset = Ingredient.objects.all()
+    pagination_class = None
     serializer_class = IngredientSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('^name',)
+    filter_backends = [DjangoFilterBackend,]
+    filterset_class = IngredientFilter
+    permission_classes = (permissions.AllowAny,)
 
 
 class CreateDesroyFavViewSet(CreateDestroyViewSet):
@@ -117,7 +120,7 @@ class CreateDesroyFavViewSet(CreateDestroyViewSet):
         user = request.user
         recipy = get_object_or_404(Recipy, id=id)
         Favorite.objects.create(user=user, recipy=recipy)
-        return Response(RecipesShort(recipy).data)
+        return Response(RecipyGetSerializer(recipy).data)
 
     def destroy(self, request, id):
         recipy = get_object_or_404(Recipy, id=id)
@@ -142,7 +145,7 @@ class CreateDesroyShopViewSet(CreateDestroyViewSet):
         user = request.user
         recipy = get_object_or_404(Recipy, id=id)
         ShoppingCart.objects.create(user=user, recipy=recipy)
-        return Response(RecipesShort(recipy).data)
+        return Response(RecipyGetSerializer(recipy).data)
 
     def destroy(self, request, id):
         recipy = get_object_or_404(Recipy, id=id)

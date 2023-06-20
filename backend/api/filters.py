@@ -1,7 +1,7 @@
 # flake8: noqa: I001, I004
 import django_filters
 
-from recipes.models import Recipy
+from recipes.models import Ingredient, Recipy
 
 
 class RecipyFilter(django_filters.FilterSet):
@@ -12,25 +12,39 @@ class RecipyFilter(django_filters.FilterSet):
     tags = django_filters.CharFilter(
         field_name='tags__slug', lookup_expr='contains'
     )
-    is_in_shopping_cart = django_filters.BooleanFilter(
+    is_in_shopping_cart = django_filters.NumberFilter(
         method='get_shopping_cart',
     )
-    is_favorited = django_filters.BooleanFilter(
+    is_favorited = django_filters.NumberFilter(
         method='get_favorited',
     )
-
-    def get_shopping_cart(self, queryset, name, value):
-        if not value:
-            return queryset
-        user = self.request.user
-        return queryset.filter(recipes_shoppingcarts__user=user)
-
-    def get_favorited(self, queryset, name, value):
-        if not value:
-            return queryset
-        user = self.request.user
-        return queryset.filter(recipes_favorites__user=user)
 
     class Meta:
         model = Recipy
         fields = ('tags', 'author')
+
+    def get_shopping_cart(self, queryset, name, value):
+        if value:
+            user = self.request.user
+            return queryset.filter(recipes_shoppingcarts__user=user)
+        return queryset
+
+    def get_favorited(self, queryset, name, value):
+        if value:
+            user = self.request.user
+            return queryset.filter(recipes_favorites__user=user)
+        return queryset
+
+
+
+
+class IngredientFilter(django_filters.FilterSet):
+    """Фильтр настраивает поиск по началу названия."""
+    name = django_filters.CharFilter(
+        field_name='name',
+        lookup_expr='istartswith'
+    )
+
+    class Meta:
+        model = Ingredient
+        fields = ('name',)

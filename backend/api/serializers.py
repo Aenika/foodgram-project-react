@@ -1,8 +1,4 @@
 # flake8: noqa: I001, I003, I004, I005
-import base64
-
-
-from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import (
@@ -116,15 +112,14 @@ class DosageCreateSerializer(serializers.ModelSerializer):
 
 def dosagecreation(dosagelist, recipy):
     """Создает ингредиент с дозировкой в рецепте."""
-    bulk_list = list()
+    bulk_list = []
     for ingredient in dosagelist:
-        amount = ingredient['amount']
-        ingredient = get_object_or_404(
-            Ingredient, id=ingredient['id']
+        dosage = Dosage(
+            recipy=recipy,
+            ingredient_id=ingredient['id'],
+            amount=ingredient['amount']
         )
-        bulk_list.append(
-            Dosage(amount=amount, ingredient=ingredient, recipy=recipy)
-        )
+        bulk_list.append(dosage)
     Dosage.objects.bulk_create(bulk_list)
 
 
