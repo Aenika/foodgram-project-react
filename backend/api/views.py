@@ -8,7 +8,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.pagination import CustomPagination
-from core.serializer_recipy import RecipesShort
 from core.viewsets import CreateDestroyViewSet
 from recipes.models import (
     Favorite,

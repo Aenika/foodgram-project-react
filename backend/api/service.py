@@ -2,11 +2,14 @@
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 
-from recipes.models import (Dosage, Ingredient,)
+from recipes.models import Dosage, Ingredient
 
 
 def create_content(user):
-    """Создает список покупок ингредиент — дозировка."""
+    """
+    Создает скачиваемый список покупок 
+    в формате: ингредиент — дозировка.
+    """
     ingredients = Dosage.objects.filter(
         recipy__recipes_shoppingcarts__user=user
     ).values('ingredient').annotate(sum_amount=Sum('amount'))

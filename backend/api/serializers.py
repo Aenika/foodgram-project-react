@@ -1,5 +1,4 @@
 # flake8: noqa: I001, I003, I004, I005
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import (
     UniqueTogetherValidator,
