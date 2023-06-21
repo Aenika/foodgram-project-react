@@ -60,6 +60,9 @@ class User(AbstractUser):
                                  verbose_name='Фамилия')
     objects = CustomUserManager()
 
+    class Meta:
+        ordering = ['-id']
+
     @property
     def is_admin(self):
         return self.role == ADMIN or self.is_superuser or self.is_staff

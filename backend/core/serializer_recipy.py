@@ -17,6 +17,14 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
+class LimitedListSerializer(serializers.ListSerializer):
+    """Ограничение до 3 шт в выдаче списком."""
+
+    def to_representation(self, data):
+        data = data.all()[:3]
+        return super(LimitedListSerializer, self).to_representation(data)
+
+
 class RecipesShort(serializers.ModelSerializer):
     """
     Сериализатор для краткого отображения рецепта,
@@ -28,4 +36,5 @@ class RecipesShort(serializers.ModelSerializer):
 
     class Meta:
         fields = ('id', 'name', 'image', 'cooking_time')
+        list_serializer_class = LimitedListSerializer
         model = Recipy
