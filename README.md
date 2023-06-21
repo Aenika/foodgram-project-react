@@ -1,4 +1,4 @@
-![project status baidge](https://github.com/aenika/foodgram-project-react/actions/workflows/yamdb_workflow.yml/badge.svg)
+![project status baidge](https://github.com/aenika/foodgram-project-react/actions/workflows/main.yml/badge.svg)
 
 # проект Foodgram
 Данный проект создан для создания рецептов. Авторизированные пользователи могут писать рецепты, а также подписываться на других авторов, добавлять рецепты в избранное и на основе выбранных рецептов создавать список покупок, состоящий из ингредиентов, необходимых для выбранных рецептов.
