@@ -7,7 +7,6 @@ from rest_framework.validators import (
 
 from core.constants import (
     CHARS_FOR_RECIPY_NAME,
-    MAX_COOKING_TIME,
     MIN_COOKING_TIME
 )
 from core.serializer_recipy import Base64ImageField
@@ -153,9 +152,6 @@ class RecipySerializer(serializers.ModelSerializer):
         if data['cooking_time'] < MIN_COOKING_TIME:
             raise ValidationError(
                 f'Время готовки должно быть не менее {MIN_COOKING_TIME}!')
-        if data['cooking_time'] > MAX_COOKING_TIME:
-            raise ValidationError(
-                f'Время готовки более {MAX_COOKING_TIME/60} часов? Помилуйте!')
         if len(data['name']) > CHARS_FOR_RECIPY_NAME:
             raise ValidationError(
                 'Слишком длинное название'

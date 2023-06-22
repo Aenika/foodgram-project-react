@@ -1,5 +1,4 @@
 from django.core.validators import (
-    MaxValueValidator,
     MinValueValidator,
     RegexValidator
 )
@@ -8,7 +7,6 @@ from django.db import models
 
 from core.constants import (
     CHARS_FOR_RECIPY_NAME,
-    MAX_COOKING_TIME,
     MIN_COOKING_TIME
 )
 from users.models import User
@@ -122,10 +120,6 @@ class Recipy(models.Model):
                 MIN_COOKING_TIME,
                 f'Время готовки не может быть меньше {MIN_COOKING_TIME}!'
             ),
-            MaxValueValidator(
-                MAX_COOKING_TIME,
-                f'Время готовки более {MAX_COOKING_TIME/60} часов? Помилуйте!'
-            )
         ]
     )
     pub_date = models.DateTimeField(auto_now_add=True)
