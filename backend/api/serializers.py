@@ -173,20 +173,20 @@ class RecipySerializer(serializers.ModelSerializer):
         tag_list = []
         for tag in value:
             if tag.slug in tag_list:
-                raise serializers.ValidationError('Такой тег уже есть!')
+                raise ValidationError('Такой тег уже есть!')
             tag_list.append(tag.slug)
         if not value:
-            raise serializers.ValidationError('Нужен хотя бы один тег!')
+            raise ValidationError('Нужен хотя бы один тег!')
         return value
 
     def validate_ingredients(self, value):
         ingredient_list = []
         for ingredient in value:
             if ingredient['id'] in ingredient_list:
-                raise serializers.ValidationError('Такой ингредиент уже есть!')
+                raise ValidationError('Такой ингредиент уже есть!')
             ingredient_list.append(ingredient['id'])
         if not value:
-            raise serializers.ValidationError('Нужен хотя бы один ингредиент!')
+            raise ValidationError('Нужен хотя бы один ингредиент!')
         return value
 
     @transaction.atomic
