@@ -10,7 +10,6 @@ SECRET_KEY = os.getenv('SECRET_KEY', default='p&l%385148kslhtyn^##a1)ilz@4zqj=rq
 
 DEBUG = os.getenv('DEBUG', default=False)
 
-
 ALLOWED_HOSTS = [
     '*',
     'localhost',
@@ -20,7 +19,7 @@ ALLOWED_HOSTS = [
     'web:8000',
     'web:5000',
     'testserver',
-    '51.250.83.49'
+    '51.250.85.90'
 ]
 
 

@@ -106,11 +106,19 @@ class DosageCreateSerializer(serializers.ModelSerializer):
         model = Dosage
         fields = ('id', 'amount')
 
+    def validate_amount(self, data):
+        if int(data) < 1:
+            raise ValidationError(
+                'Введите количество 1 или более!'
+            )
+        return data
+
 
 def dosagecreation(dosagelist, recipy):
     """Создает ингредиент с дозировкой в рецепте."""
     bulk_list = []
     for ingredient in dosagelist:
+        print(ingredient)
         dosage = Dosage(
             recipy=recipy,
             ingredient_id=ingredient['id'],
@@ -148,15 +156,18 @@ class RecipySerializer(serializers.ModelSerializer):
         model = Recipy
         read_only_fields = ('author',)
 
-    def validate(self, data):
-        if data['cooking_time'] < MIN_COOKING_TIME:
-            raise ValidationError(
-                f'Время готовки должно быть не менее {MIN_COOKING_TIME}!')
-        if len(data['name']) > CHARS_FOR_RECIPY_NAME:
+    def validate_name(self, value):
+        if len(value) > CHARS_FOR_RECIPY_NAME:
             raise ValidationError(
                 'Слишком длинное название'
             )
-        return data
+        return value
+
+    def validate_cooking_time(self, value):
+        if int(value) < MIN_COOKING_TIME:
+            raise ValidationError(
+                f'Время готовки должно быть не менее {MIN_COOKING_TIME}!')
+        return value
 
     def validate_tags(self, value):
         tag_list = []
@@ -168,25 +179,22 @@ class RecipySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Нужен хотя бы один тег!')
         return value
 
-    def validate_ingrediets(self, value):
+    def validate_ingredients(self, value):
         ingredient_list = []
         for ingredient in value:
-            if ingredient.id in ingredient_list:
+            if ingredient['id'] in ingredient_list:
                 raise serializers.ValidationError('Такой ингредиент уже есть!')
-            if ingredient['amount'] <= 0:
-                raise serializers.ValidationError(
-                    'Количество ингредиента должно быть больше нуля!'
-                )
-            ingredient_list.append(ingredient.id)
+            ingredient_list.append(ingredient['id'])
         if not value:
             raise serializers.ValidationError('Нужен хотя бы один ингредиент!')
-
         return value
 
     def create(self, validated_data):
+        print(validated_data)
         current_user = self.context['request'].user
         tags = validated_data.pop('tags')
         recipyingredients = validated_data.pop('recipyingredient')
+        print(recipyingredients)
         recipy = Recipy.objects.create(author=current_user, **validated_data)
         RecipyTags.objects.bulk_create(
             [RecipyTags(tag=tag, recipy=recipy) for tag in tags]
@@ -195,20 +203,23 @@ class RecipySerializer(serializers.ModelSerializer):
         return recipy
 
     def update(self, instance, validated_data):
-        tags = validated_data.pop('tags')
-        recipyingredients = validated_data.pop('recipyingredient')
-        RecipyTags.objects.filter(recipy=instance).delete()
-        Dosage.objects.filter(recipy=instance).delete()
+        if 'tags' in validated_data:
+            tags = validated_data.pop('tags')
+            RecipyTags.objects.filter(recipy=instance).delete()
+            RecipyTags.objects.bulk_create(
+                [RecipyTags(tag=tag, recipy=instance) for tag in tags]
+            )
+        if 'ingredients' in validated_data:
+            recipyingredients = validated_data.pop('recipyingredient')
+            Dosage.objects.filter(recipy=instance).delete()
+            dosagecreation(recipyingredients, instance)
         instance.name = validated_data.get('name', instance.name)
         instance.cooking_time = validated_data.get(
             'cooking_time', instance.cooking_time
         )
         instance.text = validated_data.get('text', instance.text)
-        instance.image = validated_data.get('image', instance.image)
-        RecipyTags.objects.bulk_create(
-            [RecipyTags(tag=f"{tag}", recipy=instance) for tag in tags]
-        )
-        dosagecreation(recipyingredients, instance)
+        if 'image' in validated_data:
+            instance.image = validated_data.pop('image')
         instance.save()
         return instance
 

@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.http import HttpResponse
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
@@ -25,7 +25,7 @@ from .serializers import (
     ShoppingCartSerializer,
     TagSerializer
 )
-from .service import create_content
+from .service import create_content, create_downloadable_file
 
 
 class RecipyViewSet(viewsets.ModelViewSet):
@@ -60,6 +60,7 @@ class RecipyViewSet(viewsets.ModelViewSet):
         recipy = Recipy.objects.get(id=instance['id'])
         return Response(RecipyGetSerializer(recipy).data)
 
+    @transaction.atomic
     def update(self, request, *args, **kwargs):
         """
         Обновляет существующий рецепт и М2М поля
@@ -80,13 +81,9 @@ class RecipyViewSet(viewsets.ModelViewSet):
         """
         user = request.user
         content = create_content(user)
-        headers = {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': 'attachment; filename="shopping_cart.pdf"',
-        }
-        return HttpResponse(
-            content,
-            headers=headers
+        buffer = create_downloadable_file(content)
+        return FileResponse(
+            buffer, as_attachment=True, filename='shopping_cart.pdf'
         )
 
 

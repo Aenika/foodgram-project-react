@@ -143,6 +143,11 @@ class RecipyTags(models.Model):
     class Meta:
         verbose_name = 'тег рецепта'
         verbose_name_plural = 'теги рецепта'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['tag', 'recipy'], name='unique_recipytag'
+            )
+        ]
 
     def __str__(self):
         return f'{self.tag} у рецепта {self.recipy}'
@@ -164,14 +169,25 @@ class Dosage(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Ингредиент'
     )
-    amount: int = models.PositiveSmallIntegerField(
+    amount: int = models.IntegerField(
         verbose_name='Количество',
-        help_text='Введите необходимое количество ингредиента'
+        help_text='Введите необходимое количество ингредиента',
+        validators=[
+            MinValueValidator(
+                0,
+                'Введите количество 1 или более!'
+            ),
+        ]
     )
 
     class Meta:
         verbose_name = 'Ингредиент рецепта'
         verbose_name_plural = 'Ингредиенты рецепта'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipy', 'ingredient'], name='unique_Dosage'
+            )
+        ]
 
     def __str__(self):
         return (

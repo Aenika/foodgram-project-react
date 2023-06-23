@@ -1,6 +1,6 @@
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
 from core.serializer_recipy import RecipesShort
 from .constants import (
@@ -15,6 +15,19 @@ from .models import Follow, User
 
 class UserRegistrationSerializer(UserCreateSerializer):
     """Сериализатор для создания пользователя."""
+    email = serializers.EmailField(
+        max_length=CHARS_FOR_EMAIL,
+        validators=[UniqueValidator(
+            queryset=User.objects.all(), lookup='iexact'
+        )]
+    )
+    username = serializers.CharField(
+        max_length=CHARS_FOR_USERNAME,
+        validators=[UniqueValidator(
+            queryset=User.objects.all(), lookup='iexact'
+        )]
+    )
+
     class Meta(UserCreateSerializer.Meta):
         fields = ('email', 'username', 'first_name', 'last_name', 'password')
 
@@ -31,25 +44,9 @@ class UserRegistrationSerializer(UserCreateSerializer):
                 raise serializers.ValidationError(
                     f'Это поле должно быть не более {value} символов!'
                 )
-        try:
-            User.objects.get(email=data['email'])
-        except User.DoesNotExist:
-            pass
-        else:
-            raise serializers.ValidationError(
-                'Пользователь с таким именем уже существует!'
-            )
         if data['username'].lower() == 'me':
             raise serializers.ValidationError(
                 'Данное имя нельзя использовать!'
-            )
-        try:
-            User.objects.get(username=data['username'])
-        except User.DoesNotExist:
-            pass
-        else:
-            raise serializers.ValidationError(
-                'Пользователь с таким логином уже существует!'
             )
         return data
 
