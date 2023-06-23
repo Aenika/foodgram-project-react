@@ -218,10 +218,8 @@ class RecipySerializer(serializers.ModelSerializer):
             'cooking_time', instance.cooking_time
         )
         instance.text = validated_data.get('text', instance.text)
-        if 'image' in validated_data:
-            instance.image = validated_data.pop('image')
-        instance.save()
-        return instance
+        instance.image = validated_data.get('image', instance.image)
+        return super().update(instance, validated_data)
 
 
 class FavoriteSerializer(RecipyToUserSerializer):

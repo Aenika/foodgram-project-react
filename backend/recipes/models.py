@@ -183,11 +183,6 @@ class Dosage(models.Model):
     class Meta:
         verbose_name = 'Ингредиент рецепта'
         verbose_name_plural = 'Ингредиенты рецепта'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['recipy', 'ingredient'], name='unique_Dosage'
-            )
-        ]
 
     def __str__(self):
         return (
