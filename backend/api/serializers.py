@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework.validators import (
     UniqueTogetherValidator,
@@ -118,7 +119,6 @@ def dosagecreation(dosagelist, recipy):
     """Создает ингредиент с дозировкой в рецепте."""
     bulk_list = []
     for ingredient in dosagelist:
-        print(ingredient)
         dosage = Dosage(
             recipy=recipy,
             ingredient_id=ingredient['id'],
@@ -189,12 +189,11 @@ class RecipySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Нужен хотя бы один ингредиент!')
         return value
 
+    @transaction.atomic
     def create(self, validated_data):
-        print(validated_data)
         current_user = self.context['request'].user
         tags = validated_data.pop('tags')
         recipyingredients = validated_data.pop('recipyingredient')
-        print(recipyingredients)
         recipy = Recipy.objects.create(author=current_user, **validated_data)
         RecipyTags.objects.bulk_create(
             [RecipyTags(tag=tag, recipy=recipy) for tag in tags]
@@ -202,24 +201,24 @@ class RecipySerializer(serializers.ModelSerializer):
         dosagecreation(recipyingredients, recipy)
         return recipy
 
+    @transaction.atomic
     def update(self, instance, validated_data):
-        if 'tags' in validated_data:
-            tags = validated_data.pop('tags')
-            RecipyTags.objects.filter(recipy=instance).delete()
-            RecipyTags.objects.bulk_create(
-                [RecipyTags(tag=tag, recipy=instance) for tag in tags]
-            )
-        if 'ingredients' in validated_data:
-            recipyingredients = validated_data.pop('recipyingredient')
-            Dosage.objects.filter(recipy=instance).delete()
-            dosagecreation(recipyingredients, instance)
-        instance.name = validated_data.get('name', instance.name)
-        instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time
-        )
-        instance.text = validated_data.get('text', instance.text)
+        tags = validated_data.pop('tags')
+        recipyingredients = validated_data.pop('recipyingredient')
+        instance = super().update(instance, validated_data)
+        instance.tags.clear()
+        instance.tags.set(tags)
+        instance.ingredients.clear()
+        dosagecreation(recipyingredients, instance)
         instance.save()
         return instance
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        context = {'request': request}
+        return RecipyGetSerializer(
+            instance, context=context
+        ).data
 
 
 class FavoriteSerializer(RecipyToUserSerializer):

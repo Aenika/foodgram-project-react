@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -49,29 +48,6 @@ class RecipyViewSet(viewsets.ModelViewSet):
         if self.action == 'list' or self.action == 'retrieve':
             return RecipyGetSerializer
         return RecipySerializer
-
-    @transaction.atomic
-    def create(self, request, *args, **kwargs):
-        """Создаёт новый рецепт и М2М поля ингредиенты, теги для него."""
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        response = super().create(request, *args, **kwargs)
-        instance = response.data
-        recipy = Recipy.objects.get(id=instance['id'])
-        return Response(RecipyGetSerializer(recipy).data)
-
-    @transaction.atomic
-    def update(self, request, *args, **kwargs):
-        """
-        Обновляет существующий рецепт и М2М поля
-        ингредиенты, теги для него.
-        """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        response = super().update(request, *args, **kwargs)
-        instance = response.data
-        recipy = Recipy.objects.get(id=instance['id'])
-        return Response(RecipyGetSerializer(recipy).data)
 
     @action(detail=False, url_path='download_shopping_cart')
     def download_shopping_cart(self, request):
