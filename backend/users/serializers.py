@@ -4,7 +4,7 @@ from djoser.serializers import (
     UserSerializer
 )
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+from rest_framework.validators import UniqueTogetherValidator
 
 from core.serializer_recipy import RecipesShort
 from .constants import (
@@ -31,15 +31,9 @@ class UserRegistrationSerializer(UserCreateSerializer):
     """Сериализатор для создания пользователя."""
     email = serializers.EmailField(
         max_length=CHARS_FOR_EMAIL,
-        validators=[UniqueValidator(
-            queryset=User.objects.all(), lookup='iexact'
-        )]
     )
     username = serializers.CharField(
         max_length=CHARS_FOR_USERNAME,
-        validators=[UniqueValidator(
-            queryset=User.objects.all(), lookup='iexact'
-        )]
     )
 
     class Meta(UserCreateSerializer.Meta):
@@ -58,27 +52,31 @@ class UserRegistrationSerializer(UserCreateSerializer):
                 raise serializers.ValidationError(
                     f'Поле {key} должно быть не более {value} символов!'
                 )
-        if data['username'].lower() == 'me':
+
+    def validate_username(self, value):
+        if value.lower() == 'me':
             raise serializers.ValidationError(
                 'Данное имя нельзя использовать!'
             )
         try:
-            User.objects.get(email=data['email'].lower())
+            User.objects.get(username=value.lower())
         except User.DoesNotExist:
             pass
         else:
             raise serializers.ValidationError(
-                'Пользователь с таким именем уже существует!'
+                'Такое имя пользователя уже существует!'
             )
+        return value
+
+    def validate_email(self, value):
         try:
-            User.objects.get(username=data['username'].lower())
+            User.objects.get(email=value.lower())
         except User.DoesNotExist:
             pass
         else:
             raise serializers.ValidationError(
-                'Пользователь с таким логином уже существует!'
+                'Пользователь с таким е-мейл уже существует!'
             )
-        return data
 
     def clean_email(self):
         email = self.cleaned_data['email']

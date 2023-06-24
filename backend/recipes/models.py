@@ -181,6 +181,7 @@ class Dosage(models.Model):
     )
 
     class Meta:
+        ordering = ('ingredient',)
         verbose_name = 'Ингредиент рецепта'
         verbose_name_plural = 'Ингредиенты рецепта'
 
