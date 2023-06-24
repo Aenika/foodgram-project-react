@@ -52,6 +52,7 @@ class UserRegistrationSerializer(UserCreateSerializer):
                 raise serializers.ValidationError(
                     f'Поле {key} должно быть не более {value} символов!'
                 )
+        return data
 
     def validate_username(self, value):
         if value.lower() == 'me':
@@ -77,6 +78,7 @@ class UserRegistrationSerializer(UserCreateSerializer):
             raise serializers.ValidationError(
                 'Пользователь с таким е-мейл уже существует!'
             )
+        return value
 
     def clean_email(self):
         email = self.cleaned_data['email']
