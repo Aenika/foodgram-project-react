@@ -1,4 +1,8 @@
-from djoser.serializers import UserCreateSerializer, UserSerializer
+from djoser.serializers import (
+    TokenCreateSerializer,
+    UserCreateSerializer,
+    UserSerializer
+)
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
@@ -11,6 +15,16 @@ from .constants import (
     CHARS_FOR_USERNAME
 )
 from .models import Follow, User
+
+
+class CustomTokenCreateSerializer(TokenCreateSerializer):
+    """
+    Сериализатор для запроса токена.
+    Переписывает емейл в нижний регистр.
+    """
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        return email.lower()
 
 
 class UserRegistrationSerializer(UserCreateSerializer):
@@ -42,13 +56,37 @@ class UserRegistrationSerializer(UserCreateSerializer):
         for key, value in fields.items():
             if len(data[key]) > value:
                 raise serializers.ValidationError(
-                    f'Это поле должно быть не более {value} символов!'
+                    f'Поле {key} должно быть не более {value} символов!'
                 )
         if data['username'].lower() == 'me':
             raise serializers.ValidationError(
                 'Данное имя нельзя использовать!'
             )
+        try:
+            User.objects.get(email=data['email'].lower())
+        except User.DoesNotExist:
+            pass
+        else:
+            raise serializers.ValidationError(
+                'Пользователь с таким именем уже существует!'
+            )
+        try:
+            User.objects.get(username=data['username'].lower())
+        except User.DoesNotExist:
+            pass
+        else:
+            raise serializers.ValidationError(
+                'Пользователь с таким логином уже существует!'
+            )
         return data
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        return email.lower()
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        return username.lower()
 
 
 class CustomUserSerializer(UserSerializer):

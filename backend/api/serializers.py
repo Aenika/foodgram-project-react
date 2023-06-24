@@ -22,6 +22,7 @@ from recipes.models import (
 )
 from users.serializers import CustomUserSerializer
 from .abstract_serializer import RecipyToUserSerializer
+from .exceptions import NameDuplicationError
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -163,12 +164,6 @@ class RecipySerializer(serializers.ModelSerializer):
             )
         return value
 
-    def validate_cooking_time(self, value):
-        if int(value) < MIN_COOKING_TIME:
-            raise ValidationError(
-                f'Время готовки должно быть не менее {MIN_COOKING_TIME}!')
-        return value
-
     def validate_tags(self, value):
         tag_list = []
         for tag in value:
@@ -179,11 +174,17 @@ class RecipySerializer(serializers.ModelSerializer):
             raise ValidationError('Нужен хотя бы один тег!')
         return value
 
+    def validate_cooking_time(self, value):
+        if int(value) < int(MIN_COOKING_TIME):
+            raise ValidationError(
+                f'Время готовки должно быть не менее {MIN_COOKING_TIME}!')
+        return value
+
     def validate_ingredients(self, value):
         ingredient_list = []
         for ingredient in value:
             if ingredient['id'] in ingredient_list:
-                raise ValidationError('Такой ингредиент уже есть!')
+                raise NameDuplicationError()
             ingredient_list.append(ingredient['id'])
         if not value:
             raise ValidationError('Нужен хотя бы один ингредиент!')

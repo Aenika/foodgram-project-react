@@ -23,6 +23,16 @@ class CustomUserManager(UserManager):
         return self._create_user(username, email, password, **extra_fields)
 
 
+class LowerCharField(models.CharField):
+    def get_prep_value(self, value):
+        return str(value).lower()
+
+
+class LowerEmailfield(models.EmailField):
+    def get_prep_value(self, value):
+        return str(value).lower()
+
+
 class User(AbstractUser):
     """Класс для представления пользователей."""
     USER_TYPE_CHOICES = (
@@ -33,23 +43,23 @@ class User(AbstractUser):
                             max_length=CHARS_FOR_ROLE,
                             default=REG_USER,
                             verbose_name='Статус')
-    email = models.EmailField(max_length=CHARS_FOR_EMAIL,
-                              blank=False,
-                              null=False,
-                              unique=True,
-                              verbose_name='Е-мейл')
+    email = LowerEmailfield(max_length=CHARS_FOR_EMAIL,
+                            blank=False,
+                            null=False,
+                            unique=True,
+                            verbose_name='Е-мейл')
     password = models.CharField(max_length=CHARS_FOR_PASSWORD,
                                 blank=True,
                                 null=True,
                                 verbose_name='Пароль')
-    username = models.CharField(max_length=CHARS_FOR_USERNAME,
-                                blank=False,
-                                null=False,
-                                unique=True,
-                                verbose_name='Логин',
-                                validators=[
-                                    RegexValidator(regex=r'^[\w.@+-]+\Z$')
-                                ])
+    username = LowerCharField(max_length=CHARS_FOR_USERNAME,
+                              blank=False,
+                              null=False,
+                              unique=True,
+                              verbose_name='Логин',
+                              validators=[
+                                  RegexValidator(regex=r'^[\w.@+-]+\Z$')
+                              ])
     first_name = models.CharField(max_length=CHARS_FOR_FIRST_NAME,
                                   blank=False,
                                   null=False,

@@ -134,6 +134,7 @@ DJOSER = {
         'user_create': 'users.serializers.UserRegistrationSerializer',
         'user': 'users.serializers.CustomUserSerializer',
         'current_user': 'users.serializers.CustomUserSerializer',
+        'token_create': 'users.serializers.CustomTokenCreateSerializer',
     },
 }
 
